@@ -14,7 +14,12 @@ let auth: Auth | undefined;
 
 function getFirebaseAuth(): Auth {
 	if (!auth) {
-		const app = getApps()[0] ?? initializeApp(FIREBASE_CONFIG);
+		// Di production/staging, halaman login Firebase disajikan dari domain kita sendiri
+		// (proxy `/__/auth/*` di src/lib/server/firebase-proxy.ts). Di localhost dipakai
+		// domain bawaan Firebase.
+		const authDomain =
+			location.hostname === 'localhost' ? FIREBASE_CONFIG.authDomain : location.host;
+		const app = getApps()[0] ?? initializeApp({ ...FIREBASE_CONFIG, authDomain });
 		// Sesi tidak disimpan di browser: setelah login, token diserahkan ke server
 		// (cookie httpOnly) dan sesi Firebase di browser langsung diakhiri.
 		auth = initializeAuth(app, {

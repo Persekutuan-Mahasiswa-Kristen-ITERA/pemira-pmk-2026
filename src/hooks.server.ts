@@ -1,7 +1,12 @@
 import type { Handle } from '@sveltejs/kit/hooks';
 import { SESSION_COOKIE, verifyIdToken } from '#lib/server/auth.js';
+import { isFirebaseProxyPath, proxyFirebaseAuth } from '#lib/server/firebase-proxy.js';
 
 export const handle: Handle = async ({ event, resolve }) => {
+	if (isFirebaseProxyPath(event.url.pathname)) {
+		return proxyFirebaseAuth(event.request, event.url);
+	}
+
 	event.locals.user = null;
 
 	const token = event.cookies.get(SESSION_COOKIE);
