@@ -4,7 +4,8 @@
 # - Production: push tag `v*` (mis. `git tag v1.0.0 && git push origin v1.0.0`).
 # - Staging: jalankan manual dari tab Actions (workflow_dispatch).
 #
-# Butuh secret repo: CLOUDFLARE_API_TOKEN dan CLOUDFLARE_ACCOUNT_ID.
+# Butuh secret repo: CLOUDFLARE_API_TOKEN (izin: Cloudflare Pages Edit + D1 Edit)
+# dan CLOUDFLARE_ACCOUNT_ID.
 name: Deploy
 
 on:
@@ -49,13 +50,14 @@ jobs:
           if [ "$TARGET" = "production" ]; then
             pnpm wrangler d1 migrations apply pemira-db --remote
           else
-            pnpm wrangler d1 migrations apply pemira-db-staging --env staging --remote
+            pnpm wrangler d1 migrations apply pemira-db-staging --env preview --remote
           fi
 
-      - name: Deploy Worker
+      # Cloudflare Pages: branch `main` = production, branch lain = preview (staging).
+      - name: Deploy ke Cloudflare Pages
         run: |
           if [ "$TARGET" = "production" ]; then
-            pnpm wrangler deploy
+            pnpm wrangler pages deploy --branch main --commit-hash "$GITHUB_SHA"
           else
-            pnpm wrangler deploy --env staging
+            pnpm wrangler pages deploy --branch staging --commit-hash "$GITHUB_SHA"
           fi

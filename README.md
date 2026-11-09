@@ -28,7 +28,8 @@ Deploy hanya lewat GitHub Actions ([`.github/workflows/deploy.yml`](.github/work
 versi yang berjalan selalu sama dengan commit yang tampil di footer situs:
 
 - **Production**: push tag `v*`, misalnya `git tag v1.0.0 && git push origin v1.0.0`.
-- **Staging**: jalankan workflow _Deploy_ secara manual dari tab Actions.
+- **Staging**: jalankan workflow _Deploy_ secara manual dari tab Actions (atau `pnpm deploy:staging`).
+  Staging memakai database terpisah dan tersedia di `https://staging.pemira-pmk-itera.pages.dev`.
 
 ## Verifikasi hasil
 
@@ -50,7 +51,7 @@ Kami mencantumkan batasan sistem secara terbuka:
 
 ## Teknologi
 
-- [SvelteKit](https://svelte.dev/docs/kit) di [Cloudflare Workers](https://developers.cloudflare.com/workers/)
+- [SvelteKit](https://svelte.dev/docs/kit) di [Cloudflare Pages](https://developers.cloudflare.com/pages/) (dipilih karena mendukung subdomain lewat CNAME di DNS luar)
 - [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite) sebagai database
 - [Firebase Authentication](https://firebase.google.com/docs/auth) untuk login Google; token diverifikasi di server dengan [jose](https://github.com/panva/jose)
 
@@ -74,7 +75,8 @@ pnpm dev
 | `pnpm test`             | Tes unit, termasuk tes aturan database                             |
 | `pnpm check`            | Pemeriksaan tipe                                                   |
 | `pnpm lint`             | Prettier + ESLint                                                  |
-| `pnpm build`            | Build untuk Cloudflare Workers                                     |
+| `pnpm build`            | Build untuk Cloudflare Pages                                       |
+| `pnpm preview`          | Jalankan hasil build secara lokal dengan runtime Cloudflare        |
 | `pnpm gen`              | Buat ulang tipe Cloudflare setelah mengubah `wrangler.jsonc`       |
 | `pnpm db:reset:local`   | Hapus dan buat ulang database D1 lokal                             |
 | `pnpm db:seed:local`    | Isi database lokal dengan data contoh                              |
@@ -87,7 +89,7 @@ migrations/          Skema D1 + aturan (trigger) pemilihan
 scripts/seed-dev.sql Data contoh untuk pengembangan lokal
 src/lib/server/      Kode yang hanya berjalan di server (akses database, logika pemilihan)
 src/routes/          Halaman: beranda, /masuk, /pilih (surat suara), /hasil, /admin, /keluar
-wrangler.jsonc       Konfigurasi Cloudflare Worker dan binding D1
+wrangler.jsonc       Konfigurasi Cloudflare Pages dan binding D1 (production & preview)
 ```
 
 ## Data pribadi dan secret

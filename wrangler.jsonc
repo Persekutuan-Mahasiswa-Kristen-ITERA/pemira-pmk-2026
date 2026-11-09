@@ -1,19 +1,12 @@
 {
+	// Cloudflare Pages (bukan Workers): Pages mendukung custom subdomain lewat
+	// CNAME di DNS luar (Rumahweb), tanpa harus memindahkan nameserver.
 	"$schema": "./node_modules/wrangler/config-schema.json",
 	"name": "pemira-pmk-itera",
 	"compatibility_date": "2026-11-09",
 	"compatibility_flags": ["nodejs_als"],
-	"main": ".svelte-kit/cloudflare/_worker.js",
-	"assets": {
-		"binding": "ASSETS",
-		"directory": ".svelte-kit/cloudflare"
-	},
-	"workers_dev": true,
-	"preview_urls": false,
-	"observability": {
-		"enabled": true
-	},
-	// Database D1 production. ID database bukan rahasia.
+	"pages_build_output_dir": ".svelte-kit/cloudflare",
+	// Production (branch `main`). ID database bukan rahasia.
 	"d1_databases": [
 		{
 			"binding": "DB",
@@ -23,10 +16,9 @@
 		}
 	],
 	"env": {
-		// Lingkungan simulasi/uji coba, terpisah total dari production:
-		// `wrangler deploy --env staging`, `wrangler d1 ... --env staging`.
-		"staging": {
-			"name": "pemira-pmk-itera-staging",
+		// Preview (semua branch selain `main`, termasuk `staging`): untuk simulasi/uji coba,
+		// memakai database terpisah dari production.
+		"preview": {
 			"d1_databases": [
 				{
 					"binding": "DB",
@@ -37,7 +29,9 @@
 			]
 		}
 	}
-	// Secret (TIDAK disimpan di repo), diatur dengan `wrangler secret put <NAMA>`:
+	// Secret (TIDAK disimpan di repo):
 	//   ADMIN_EMAILS  daftar email admin dipisah koma
+	//   pnpm wrangler pages secret put ADMIN_EMAILS                 (production)
+	//   pnpm wrangler pages secret put ADMIN_EMAILS --env preview   (staging)
 	// Untuk pengembangan lokal, salin `.dev.vars.example` menjadi `.dev.vars`.
 }
