@@ -25,6 +25,7 @@
 	</a>
 	{#if data.userEmail}
 		<form class="session" method="POST" action={resolve('/keluar')}>
+			{#if data.isAdmin}<a class="admin-link" href={resolve('/admin')}>Admin</a>{/if}
 			<span class="session-email">{data.userEmail}</span>
 			<button type="submit">Keluar</button>
 		</form>
@@ -75,6 +76,11 @@
 		color: var(--ink-muted);
 	}
 
+	.admin-link {
+		font-weight: 700;
+		color: var(--brown);
+	}
+
 	.session-email {
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -96,6 +102,11 @@
 	}
 
 	@media (max-width: 560px) {
+		.admin-link {
+			font-weight: 700;
+			color: var(--brown);
+		}
+
 		.session-email {
 			display: none;
 		}

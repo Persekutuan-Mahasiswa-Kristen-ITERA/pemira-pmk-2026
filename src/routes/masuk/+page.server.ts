@@ -1,6 +1,6 @@
 import { env } from 'cloudflare:workers';
 import { fail, redirect } from '@sveltejs/kit';
-import { canSignIn, STUDENT_DOMAIN } from '#lib/server/access.js';
+import { canSignIn, isAdminEmail, STUDENT_DOMAIN } from '#lib/server/access.js';
 import { SESSION_COOKIE, verifyIdToken } from '#lib/server/auth.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -33,6 +33,6 @@ export const actions: Actions = {
 			sameSite: 'lax',
 			maxAge
 		});
-		return { ok: true };
+		return { admin: isAdminEmail(user.email, env.ADMIN_EMAILS) };
 	}
 };

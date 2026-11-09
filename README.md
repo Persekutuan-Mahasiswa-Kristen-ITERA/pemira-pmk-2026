@@ -17,6 +17,15 @@ Aturan-aturan ini ditegakkan **di database** lewat trigger SQL, bukan hanya di k
 Lihat [`migrations/0001_init.sql`](migrations/0001_init.sql) dan tesnya di
 [`src/lib/server/db/schema.spec.ts`](src/lib/server/db/schema.spec.ts).
 
+## Verifikasi hasil
+
+Setelah pemungutan suara ditutup, halaman `/hasil` menampilkan perolehan suara, pencarian kode tanda terima,
+dan berkas CSV berisi semua surat suara (`kode,nomor_calon`) beserta hash SHA-256-nya. Siapa pun bisa:
+
+1. Mengunduh CSV dan mencocokkan hash-nya: `shasum -a 256 surat-suara-pemira-pmk-itera-2027.csv`.
+2. Menghitung ulang perolehan suara dari CSV tersebut.
+3. Memastikan kode tanda terimanya sendiri ada di daftar dengan nomor calon yang benar.
+
 ## Batasan yang diketahui
 
 Kami mencantumkan batasan sistem secara terbuka:
@@ -63,7 +72,7 @@ pnpm dev
 migrations/          Skema D1 + aturan (trigger) pemilihan
 scripts/seed-dev.sql Data contoh untuk pengembangan lokal
 src/lib/server/      Kode yang hanya berjalan di server (akses database, logika pemilihan)
-src/routes/          Halaman: beranda, /masuk, /pilih (surat suara), /keluar
+src/routes/          Halaman: beranda, /masuk, /pilih (surat suara), /hasil, /admin, /keluar
 wrangler.jsonc       Konfigurasi Cloudflare Worker dan binding D1
 ```
 

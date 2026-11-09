@@ -17,14 +17,15 @@
 	};
 	const SILENT = new Set(['auth/popup-closed-by-user', 'auth/cancelled-popup-request']);
 
-	async function login() {
+	/** @param asCommittee panitia/admin boleh memakai akun di luar domain mahasiswa */
+	async function login(asCommittee = false) {
 		busy = true;
 		error = null;
 		try {
 			const { signInWithGoogle } = await import('#lib/firebase.js');
 			let idToken: string;
 			try {
-				idToken = await signInWithGoogle(data.studentDomain);
+				idToken = await signInWithGoogle(asCommittee ? undefined : data.studentDomain);
 			} catch (err) {
 				const code = (err as { code?: string }).code ?? '';
 				if (!SILENT.has(code)) {
@@ -43,7 +44,8 @@
 			const result = deserialize(await response.text());
 
 			if (result.type === 'success') {
-				await goto(resolve('/pilih'), { invalidateAll: true });
+				const target = result.data?.admin ? resolve('/admin') : resolve('/pilih');
+				await goto(target, { invalidateAll: true });
 			} else if (result.type === 'failure') {
 				error = String(result.data?.error ?? 'Login gagal.');
 			} else {
@@ -67,13 +69,20 @@
 		terdaftar di DPT yang dapat memberikan suara.
 	</p>
 
-	<button class="button" type="button" onclick={login} disabled={busy} aria-busy={busy}>
+	<button class="button" type="button" onclick={() => login()} disabled={busy} aria-busy={busy}>
 		{busy ? 'Memproses…' : 'Masuk dengan Google'}
 	</button>
 
 	{#if error}
 		<p class="error" role="alert">{error}</p>
 	{/if}
+
+	<p class="committee">
+		Panitia?
+		<button type="button" class="link" onclick={() => login(true)} disabled={busy}>
+			Masuk dengan akun panitia
+		</button>
+	</p>
 
 	<p class="note">
 		Kami hanya menerima alamat email dan nama dari Google untuk mencocokkan DPT. Pilihanmu tidak
@@ -113,6 +122,23 @@
 		background: #f7e6dc;
 		color: #6b2414;
 		font-size: 15px;
+	}
+
+	.committee {
+		margin-top: 20px;
+		font-size: 14px;
+		color: var(--ink-muted);
+	}
+
+	.link {
+		padding: 0;
+		border: 0;
+		background: none;
+		font: inherit;
+		font-weight: 700;
+		color: var(--brown);
+		text-decoration: underline;
+		cursor: pointer;
 	}
 
 	.note {

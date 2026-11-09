@@ -1,17 +1,10 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { formatWib as when } from '#lib/time.js';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 	let election = $derived(data.election);
-
-	const formatter = new Intl.DateTimeFormat('id-ID', {
-		dateStyle: 'full',
-		timeStyle: 'short',
-		timeZone: 'Asia/Jakarta'
-	});
-	const when = (seconds: number | null) =>
-		seconds === null ? '' : `${formatter.format(new Date(seconds * 1000))} WIB`;
 
 	const PHASE_LABEL = {
 		unscheduled: 'Jadwal belum diumumkan',
@@ -58,10 +51,11 @@
 			<p class="status-label">{PHASE_LABEL[election.phase]}</p>
 			{#if election.phase === 'upcoming'}
 				<p>Dibuka {when(election.opensAt)}</p>
-			{:else if election.phase === 'open'}
+			{:else if election.phase === 'open' || election.phase === 'closed'}
 				<p>Ditutup {when(election.closesAt)}</p>
-			{:else if election.phase === 'closed'}
-				<p>Ditutup {when(election.closesAt)}</p>
+				<p>
+					{data.participation.voted} dari {data.participation.eligible} pemilih sudah memberikan suara.
+				</p>
 			{:else}
 				<p>Panitia akan mengumumkan waktu pemungutan suara.</p>
 			{/if}
@@ -72,6 +66,11 @@
 		<a class="button cta" href={resolve('/pilih')}>
 			{data.userEmail ? 'Buka surat suara' : 'Masuk untuk memilih'}
 			<span aria-hidden="true">→</span>
+		</a>
+	{/if}
+	{#if election.phase === 'closed'}
+		<a class="button cta" href={resolve('/hasil')}>
+			Lihat hasil dan periksa suaramu <span aria-hidden="true">→</span>
 		</a>
 	{/if}
 </section>
