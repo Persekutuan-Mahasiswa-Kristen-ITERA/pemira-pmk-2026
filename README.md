@@ -21,9 +21,6 @@ Lihat [`migrations/0001_init.sql`](migrations/0001_init.sql) dan tesnya di
 
 Kami mencantumkan batasan sistem secara terbuka:
 
-- **Pemegang akses akun Cloudflare** secara teori bisa memakai fitur _Time Travel_ D1 (pemulihan database
-  ke titik waktu tertentu) untuk mencocokkan urutan masuknya surat suara dengan penanda "sudah memilih".
-  Karena itu, akses akun Cloudflare dibatasi dan setiap akses ke database production harus disaksikan.
 - **E-voting jarak jauh** tidak bisa mencegah pemilih ditekan atau diawasi saat memilih, atau meminjamkan
   akunnya. Hal ini diatur lewat tata tertib panitia.
 - **Kode tanda terima** bisa dipakai pemilih untuk menunjukkan pilihannya kepada orang lain. Meminta kode
