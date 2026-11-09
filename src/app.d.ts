@@ -4,6 +4,9 @@
 import type { AuthUser } from '#lib/server/auth.js';
 
 declare global {
+	/** Commit git saat build (lihat vite.config.ts). */
+	const __APP_COMMIT__: string;
+
 	namespace App {
 		// interface Error {}
 		interface Locals {

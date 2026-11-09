@@ -7,6 +7,8 @@
 	let { children, data }: LayoutProps = $props();
 
 	const REPO_URL = 'https://github.com/Persekutuan-Mahasiswa-Kristen-ITERA/pemira-pmk-2026';
+	const COMMIT = __APP_COMMIT__;
+	const COMMIT_IS_PUBLISHED = /^[0-9a-f]{40}$/.test(COMMIT);
 </script>
 
 <svelte:head>
@@ -41,6 +43,12 @@
 	<p>
 		Kode sumber terbuka untuk diaudit:
 		<a href={REPO_URL} rel="noopener">GitHub</a>
+		· Versi
+		{#if COMMIT_IS_PUBLISHED}
+			<a class="commit" href="{REPO_URL}/commit/{COMMIT}" rel="noopener">{COMMIT.slice(0, 7)}</a>
+		{:else}
+			<span class="commit" title={COMMIT}>{COMMIT.slice(0, 7)} (build lokal)</span>
+		{/if}
 	</p>
 </footer>
 
@@ -149,6 +157,10 @@
 		border-top: 1px solid var(--line);
 		font-size: 13px;
 		color: var(--ink-muted);
+	}
+
+	.commit {
+		font-family: ui-monospace, 'SF Mono', Menlo, monospace;
 	}
 
 	.footer a {

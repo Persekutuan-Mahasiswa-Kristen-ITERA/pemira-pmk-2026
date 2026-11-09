@@ -17,6 +17,19 @@ Aturan-aturan ini ditegakkan **di database** lewat trigger SQL, bukan hanya di k
 Lihat [`migrations/0001_init.sql`](migrations/0001_init.sql) dan tesnya di
 [`src/lib/server/db/schema.spec.ts`](src/lib/server/db/schema.spec.ts).
 
+## Untuk panitia
+
+Langkah persiapan, simulasi, hari pemilihan, dan rekapitulasi ada di
+[`docs/panduan-panitia.md`](docs/panduan-panitia.md).
+
+## Deploy
+
+Deploy hanya lewat GitHub Actions ([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)), supaya
+versi yang berjalan selalu sama dengan commit yang tampil di footer situs:
+
+- **Production**: push tag `v*`, misalnya `git tag v1.0.0 && git push origin v1.0.0`.
+- **Staging**: jalankan workflow _Deploy_ secara manual dari tab Actions.
+
 ## Verifikasi hasil
 
 Setelah pemungutan suara ditutup, halaman `/hasil` menampilkan perolehan suara, pencarian kode tanda terima,
@@ -55,16 +68,17 @@ pnpm dev
 
 ## Perintah
 
-| Perintah              | Fungsi                                                       |
-| --------------------- | ------------------------------------------------------------ |
-| `pnpm dev`            | Server pengembangan                                          |
-| `pnpm test`           | Tes unit, termasuk tes aturan database                       |
-| `pnpm check`          | Pemeriksaan tipe                                             |
-| `pnpm lint`           | Prettier + ESLint                                            |
-| `pnpm build`          | Build untuk Cloudflare Workers                               |
-| `pnpm gen`            | Buat ulang tipe Cloudflare setelah mengubah `wrangler.jsonc` |
-| `pnpm db:reset:local` | Hapus dan buat ulang database D1 lokal                       |
-| `pnpm db:seed:local`  | Isi database lokal dengan data contoh                        |
+| Perintah                | Fungsi                                                             |
+| ----------------------- | ------------------------------------------------------------------ |
+| `pnpm dev`              | Server pengembangan                                                |
+| `pnpm test`             | Tes unit, termasuk tes aturan database                             |
+| `pnpm check`            | Pemeriksaan tipe                                                   |
+| `pnpm lint`             | Prettier + ESLint                                                  |
+| `pnpm build`            | Build untuk Cloudflare Workers                                     |
+| `pnpm gen`              | Buat ulang tipe Cloudflare setelah mengubah `wrangler.jsonc`       |
+| `pnpm db:reset:local`   | Hapus dan buat ulang database D1 lokal                             |
+| `pnpm db:seed:local`    | Isi database lokal dengan data contoh                              |
+| `pnpm db:reset:staging` | Kosongkan database **staging** (untuk simulasi). Bukan production. |
 
 ## Struktur
 

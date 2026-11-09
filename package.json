@@ -21,7 +21,8 @@
 		"gen": "wrangler types --env-file .dev.vars.example",
 		"db:migrate:local": "wrangler d1 migrations apply pemira-db --local",
 		"db:reset:local": "rm -rf .wrangler/state/v3/d1 && wrangler d1 migrations apply pemira-db --local",
-		"db:seed:local": "wrangler d1 execute pemira-db --local --file scripts/seed-dev.sql"
+		"db:seed:local": "wrangler d1 execute pemira-db --local --file scripts/seed-dev.sql",
+		"db:reset:staging": "wrangler d1 execute pemira-db-staging --env staging --remote --file scripts/drop-all.sql && wrangler d1 migrations apply pemira-db-staging --env staging --remote"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
@@ -51,5 +52,6 @@
 	"dependencies": {
 		"firebase": "^13.2.0",
 		"jose": "^6.2.15"
-	}
+	},
+	"packageManager": "pnpm@11.5.1"
 }

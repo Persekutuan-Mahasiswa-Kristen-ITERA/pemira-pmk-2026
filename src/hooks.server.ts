@@ -24,6 +24,13 @@ export const handle: Handle = async ({ event, resolve }) => {
 	response.headers.set('x-frame-options', 'DENY');
 	response.headers.set('x-content-type-options', 'nosniff');
 	response.headers.set('referrer-policy', 'same-origin');
+	response.headers.set(
+		'permissions-policy',
+		'camera=(), microphone=(), geolocation=(), payment=()'
+	);
+	if (event.url.protocol === 'https:') {
+		response.headers.set('strict-transport-security', 'max-age=31536000');
+	}
 	if (event.locals.user) {
 		// Halaman pribadi (termasuk kode tanda terima) tidak boleh disimpan cache.
 		response.headers.set('cache-control', 'private, no-store');
