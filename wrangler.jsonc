@@ -13,16 +13,30 @@
 	"observability": {
 		"enabled": true
 	},
-	// Database D1. `database_id` diisi setelah database dibuat di akun Cloudflare
-	// (`wrangler d1 create pemira-db`). ID ini bukan rahasia.
+	// Database D1 production. ID database bukan rahasia.
 	"d1_databases": [
 		{
 			"binding": "DB",
 			"database_name": "pemira-db",
-			"database_id": "00000000-0000-0000-0000-000000000000",
+			"database_id": "d461eca2-b900-4ddb-bd87-e62e63375dde",
 			"migrations_dir": "migrations"
 		}
-	]
+	],
+	"env": {
+		// Lingkungan simulasi/uji coba, terpisah total dari production:
+		// `wrangler deploy --env staging`, `wrangler d1 ... --env staging`.
+		"staging": {
+			"name": "pemira-pmk-itera-staging",
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "pemira-db-staging",
+					"database_id": "5a2eeacc-5ce5-46e3-9c9b-cf18876c7336",
+					"migrations_dir": "migrations"
+				}
+			]
+		}
+	}
 	// Secret (TIDAK disimpan di repo), diatur dengan `wrangler secret put <NAMA>`:
 	//   ADMIN_EMAILS  daftar email admin dipisah koma
 	// Untuk pengembangan lokal, salin `.dev.vars.example` menjadi `.dev.vars`.
