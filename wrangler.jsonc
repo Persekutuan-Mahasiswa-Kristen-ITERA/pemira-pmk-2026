@@ -1,0 +1,29 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "pemira-pmk-itera",
+	"compatibility_date": "2026-11-09",
+	"compatibility_flags": ["nodejs_als"],
+	"main": ".svelte-kit/cloudflare/_worker.js",
+	"assets": {
+		"binding": "ASSETS",
+		"directory": ".svelte-kit/cloudflare"
+	},
+	"workers_dev": true,
+	"preview_urls": false,
+	"observability": {
+		"enabled": true
+	},
+	// Database D1. `database_id` diisi setelah database dibuat di akun Cloudflare
+	// (`wrangler d1 create pemira-db`). ID ini bukan rahasia.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "pemira-db",
+			"database_id": "00000000-0000-0000-0000-000000000000",
+			"migrations_dir": "migrations"
+		}
+	]
+	// Secret (TIDAK disimpan di repo), diatur dengan `wrangler secret put <NAMA>`:
+	//   ADMIN_EMAILS  daftar email admin dipisah koma
+	// Untuk pengembangan lokal, salin `.dev.vars.example` menjadi `.dev.vars`.
+}

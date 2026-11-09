@@ -1,19 +1,64 @@
-# Pemira PMK ITERA
+# Pemira PMK ITERA 2027
 
-Halaman informasi awal untuk Pemilihan Raya PMK ITERA.
+Aplikasi e-voting untuk **Pemilihan Ketua PMK ITERA 2027**. Kode sumbernya terbuka supaya siapa pun
+bisa mengaudit cara suara dicatat dan dihitung.
+
+## Prinsip
+
+| Prinsip               | Penerapan                                                                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Hanya pemilih sah     | Login Google dengan email `@student.itera.ac.id` yang terdaftar di DPT (mahasiswa Kristen aktif).                                     |
+| Satu orang satu suara | Email hanya bisa tercatat sekali; penanda "sudah memilih" dan surat suara disimpan dalam satu transaksi.                              |
+| Rahasia               | Identitas (`voted`) dan isi suara (`ballots`) disimpan terpisah tanpa penghubung, tanpa timestamp, tanpa urutan.                      |
+| Bisa diverifikasi     | Setiap pemilih mendapat kode tanda terima acak. Setelah ditutup, daftar `kode → calon` dipublikasikan untuk dicek dan dihitung ulang. |
+| Tidak bisa diubah     | Surat suara, penanda sudah memilih, dan audit log tidak bisa diubah/dihapus. DPT, calon, dan jadwal terkunci saat pemilihan dibuka.   |
+
+Aturan-aturan ini ditegakkan **di database** lewat trigger SQL, bukan hanya di kode aplikasi.
+Lihat [`migrations/0001_init.sql`](migrations/0001_init.sql) dan tesnya di
+[`src/lib/server/db/schema.spec.ts`](src/lib/server/db/schema.spec.ts).
+
+## Teknologi
+
+- [SvelteKit](https://svelte.dev/docs/kit) di [Cloudflare Workers](https://developers.cloudflare.com/workers/)
+- [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite) sebagai database
+- [Firebase Authentication](https://firebase.google.com/docs/auth) untuk login Google (tahap berikutnya)
 
 ## Menjalankan lokal
 
-Buka `index.html` di browser, atau sajikan direktori ini dengan server HTTP statis, misalnya:
+Prasyarat: Node.js 22.13+ (untuk `node:sqlite` di tes) dan [pnpm](https://pnpm.io).
 
 ```sh
-python3 -m http.server 8000
+pnpm install
+cp .dev.vars.example .dev.vars   # secret lokal, tidak di-commit
+pnpm db:reset:local              # buat database lokal + jalankan migrasi
+pnpm db:seed:local               # opsional: data contoh (fiktif) dan buka jendela pemilihan 7 hari
+pnpm dev
 ```
 
-Kemudian buka `http://localhost:8000`.
+## Perintah
 
-## Sebelum publikasi
+| Perintah              | Fungsi                                                       |
+| --------------------- | ------------------------------------------------------------ |
+| `pnpm dev`            | Server pengembangan                                          |
+| `pnpm test`           | Tes unit, termasuk tes aturan database                       |
+| `pnpm check`          | Pemeriksaan tipe                                             |
+| `pnpm lint`           | Prettier + ESLint                                            |
+| `pnpm build`          | Build untuk Cloudflare Workers                               |
+| `pnpm gen`            | Buat ulang tipe Cloudflare setelah mengubah `wrangler.jsonc` |
+| `pnpm db:reset:local` | Hapus dan buat ulang database D1 lokal                       |
+| `pnpm db:seed:local`  | Isi database lokal dengan data contoh                        |
 
-- Konfirmasi tahapan dan tanggal resmi dengan panitia.
-- Verifikasi alamat email panitia pada tombol kontak.
-- Tambahkan informasi calon dan mekanisme pemilihan resmi.
+## Struktur
+
+```
+migrations/          Skema D1 + aturan (trigger) pemilihan
+scripts/seed-dev.sql Data contoh untuk pengembangan lokal
+src/lib/server/      Kode yang hanya berjalan di server (akses database, logika pemilihan)
+src/routes/          Halaman
+wrangler.jsonc       Konfigurasi Cloudflare Worker dan binding D1
+```
+
+## Data pribadi dan secret
+
+Repo ini publik. **Jangan pernah meng-commit** daftar pemilih (DPT), file `.dev.vars`, atau kredensial apa pun.
+DPT diimpor langsung ke D1 oleh panitia; secret diatur dengan `wrangler secret put`.

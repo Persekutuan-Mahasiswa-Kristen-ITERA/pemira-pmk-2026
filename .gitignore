@@ -1,0 +1,33 @@
+node_modules
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Cloudflare: secret lokal
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# Data pribadi: daftar pemilih (DPT) tidak boleh masuk repo publik
+/data/
+*.csv
+*.xlsx

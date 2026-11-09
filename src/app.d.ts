@@ -1,0 +1,13 @@
+// See https://svelte.dev/docs/kit/types#app.d.ts
+// Binding Cloudflare (D1, secret) diakses lewat `import { env } from 'cloudflare:workers'`;
+// tipenya ada di worker-configuration.d.ts (`pnpm gen`).
+declare global {
+	namespace App {
+		// interface Error {}
+		// interface Locals {}
+		// interface PageData {}
+		// interface PageState {}
+	}
+}
+
+export {};
