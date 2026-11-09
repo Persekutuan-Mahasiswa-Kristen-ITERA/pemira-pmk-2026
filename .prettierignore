@@ -7,6 +7,3 @@ bun.lockb
 
 # Miscellaneous
 /static/
-
-# Dihasilkan oleh `pnpm gen`
-worker-configuration.d.ts

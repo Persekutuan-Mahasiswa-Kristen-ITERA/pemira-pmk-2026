@@ -31,3 +31,6 @@ vite.config.ts.timestamp-*
 /data/
 *.csv
 *.xlsx
+
+# Dibuat otomatis oleh `pnpm gen` (dijalankan sebelum check/build)
+worker-configuration.d.ts
