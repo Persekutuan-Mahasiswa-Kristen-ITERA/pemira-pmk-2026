@@ -5,23 +5,9 @@
  * yang sama dengan Cloudflare D1. Transaksi BEGIN/COMMIT di sini meniru
  * `DB.batch()` di D1, yang juga atomik.
  */
-import { DatabaseSync } from 'node:sqlite';
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import type { DatabaseSync } from 'node:sqlite';
 import { beforeEach, describe, expect, it } from 'vitest';
-
-const MIGRATIONS_DIR = join(process.cwd(), 'migrations');
-
-function freshDb(): DatabaseSync {
-	const db = new DatabaseSync(':memory:');
-	db.exec('PRAGMA foreign_keys = ON;'); // D1 menegakkan foreign key secara default
-	for (const file of readdirSync(MIGRATIONS_DIR)
-		.filter((f) => f.endsWith('.sql'))
-		.sort()) {
-		db.exec(readFileSync(join(MIGRATIONS_DIR, file), 'utf8'));
-	}
-	return db;
-}
+import { freshDb } from '../testing/sqlite';
 
 const now = () => Math.floor(Date.now() / 1000);
 

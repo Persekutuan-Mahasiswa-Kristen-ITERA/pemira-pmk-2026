@@ -47,5 +47,9 @@
 	},
 	"engines": {
 		"node": ">=22.13"
+	},
+	"dependencies": {
+		"firebase": "^13.2.0",
+		"jose": "^6.2.15"
 	}
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -66,6 +67,13 @@
 			{/if}
 		</div>
 	</div>
+
+	{#if election.phase === 'open'}
+		<a class="button cta" href={resolve('/pilih')}>
+			{data.userEmail ? 'Buka surat suara' : 'Masuk untuk memilih'}
+			<span aria-hidden="true">→</span>
+		</a>
+	{/if}
 </section>
 
 <section class="band" aria-labelledby="cara">
@@ -125,6 +133,10 @@
 		border: 1px solid var(--line);
 		font-size: 14px;
 		color: var(--ink-soft);
+	}
+
+	.cta {
+		margin-top: 24px;
 	}
 
 	.status-dot {

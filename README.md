@@ -17,11 +17,23 @@ Aturan-aturan ini ditegakkan **di database** lewat trigger SQL, bukan hanya di k
 Lihat [`migrations/0001_init.sql`](migrations/0001_init.sql) dan tesnya di
 [`src/lib/server/db/schema.spec.ts`](src/lib/server/db/schema.spec.ts).
 
+## Batasan yang diketahui
+
+Kami mencantumkan batasan sistem secara terbuka:
+
+- **Pemegang akses akun Cloudflare** secara teori bisa memakai fitur _Time Travel_ D1 (pemulihan database
+  ke titik waktu tertentu) untuk mencocokkan urutan masuknya surat suara dengan penanda "sudah memilih".
+  Karena itu, akses akun Cloudflare dibatasi dan setiap akses ke database production harus disaksikan.
+- **E-voting jarak jauh** tidak bisa mencegah pemilih ditekan atau diawasi saat memilih, atau meminjamkan
+  akunnya. Hal ini diatur lewat tata tertib panitia.
+- **Kode tanda terima** bisa dipakai pemilih untuk menunjukkan pilihannya kepada orang lain. Meminta kode
+  tanda terima orang lain dilarang oleh tata tertib.
+
 ## Teknologi
 
 - [SvelteKit](https://svelte.dev/docs/kit) di [Cloudflare Workers](https://developers.cloudflare.com/workers/)
 - [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite) sebagai database
-- [Firebase Authentication](https://firebase.google.com/docs/auth) untuk login Google (tahap berikutnya)
+- [Firebase Authentication](https://firebase.google.com/docs/auth) untuk login Google; token diverifikasi di server dengan [jose](https://github.com/panva/jose)
 
 ## Menjalankan lokal
 
@@ -54,7 +66,7 @@ pnpm dev
 migrations/          Skema D1 + aturan (trigger) pemilihan
 scripts/seed-dev.sql Data contoh untuk pengembangan lokal
 src/lib/server/      Kode yang hanya berjalan di server (akses database, logika pemilihan)
-src/routes/          Halaman
+src/routes/          Halaman: beranda, /masuk, /pilih (surat suara), /keluar
 wrangler.jsonc       Konfigurasi Cloudflare Worker dan binding D1
 ```
 

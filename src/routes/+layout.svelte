@@ -4,7 +4,7 @@
 	import favicon from '#lib/assets/favicon.svg';
 	import type { LayoutProps } from './$types';
 
-	let { children }: LayoutProps = $props();
+	let { children, data }: LayoutProps = $props();
 
 	const REPO_URL = 'https://github.com/Persekutuan-Mahasiswa-Kristen-ITERA/pemira-pmk-2026';
 </script>
@@ -23,6 +23,12 @@
 			<span class="brand-small">Pemilihan Raya 2027</span>
 		</span>
 	</a>
+	{#if data.userEmail}
+		<form class="session" method="POST" action={resolve('/keluar')}>
+			<span class="session-email">{data.userEmail}</span>
+			<button type="submit">Keluar</button>
+		</form>
+	{/if}
 </header>
 
 <main id="konten">
@@ -55,7 +61,44 @@
 	.topbar {
 		display: flex;
 		align-items: center;
+		justify-content: space-between;
+		gap: 16px;
 		min-height: 80px;
+	}
+
+	.session {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		min-width: 0;
+		font-size: 13px;
+		color: var(--ink-muted);
+	}
+
+	.session-email {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.session button {
+		flex: none;
+		padding: 8px 12px;
+		border: 1px solid var(--line);
+		background: transparent;
+		font: 700 13px var(--font-body);
+		color: var(--brown);
+		cursor: pointer;
+	}
+
+	.session button:hover {
+		background: var(--paper-light);
+	}
+
+	@media (max-width: 560px) {
+		.session-email {
+			display: none;
+		}
 	}
 
 	.brand {
