@@ -30,6 +30,8 @@ vite.config.ts.timestamp-*
 # Data pribadi: daftar pemilih (DPT) tidak boleh masuk repo publik
 /data/
 *.csv
+# ...kecuali folder rute unduhan hasil (bukan berkas data)
+!/src/routes/hasil/surat-suara.csv/
 *.xlsx
 
 # Dibuat otomatis oleh `pnpm gen` (dijalankan sebelum check/build)
