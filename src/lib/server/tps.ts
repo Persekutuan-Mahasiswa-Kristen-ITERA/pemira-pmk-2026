@@ -9,6 +9,7 @@
 import { sha256Hex } from './hash';
 import { RECEIPT_ALPHABET } from './receipt';
 import { getVoterState, type VoterState } from './vote';
+import { cookieBase } from './cookies';
 
 /** Cookie berisi token izin memilih (httpOnly). */
 export const PASS_COOKIE = 'pemira_pass';
@@ -346,9 +347,9 @@ export async function usedExceptionNims(db: D1Database): Promise<string[]> {
 }
 
 /** Opsi cookie izin memilih: httpOnly, hanya berlaku selama izinnya. */
-export function passCookieOptions(expiresAt: number) {
+export function passCookieOptions(expiresAt: number, url: URL) {
 	return {
-		path: '/',
+		...cookieBase(url),
 		httpOnly: true,
 		sameSite: 'lax' as const,
 		maxAge: Math.max(1, expiresAt - Math.floor(Date.now() / 1000))

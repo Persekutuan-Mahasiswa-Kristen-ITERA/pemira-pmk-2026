@@ -1,6 +1,7 @@
 import type { Handle } from '@sveltejs/kit/hooks';
 import { getStaffRoles } from '#lib/server/admins.js';
 import { SESSION_COOKIE, verifyIdToken } from '#lib/server/auth.js';
+import { cookieBase } from '#lib/server/cookies.js';
 import { getDb } from '#lib/server/db.js';
 import { DEMO_MODE, superAdminEmails } from '#lib/server/demo.js';
 import { DEMO_COOKIE } from '#lib/server/demo-users.js';
@@ -23,7 +24,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 			event.locals.user = await verifyIdToken(token);
 		} catch {
 			// Token kedaluwarsa atau tidak sah: akhiri sesi.
-			event.cookies.delete(SESSION_COOKIE, { path: '/' });
+			event.cookies.delete(SESSION_COOKIE, cookieBase(event.url));
 		}
 	}
 	if (!event.locals.user && DEMO_MODE) {
@@ -44,7 +45,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	if (passToken) {
 		event.locals.pass = await getPass(getDb(), passToken);
 		// Izin kedaluwarsa atau sudah terpakai: hapus cookie-nya.
-		if (!event.locals.pass) event.cookies.delete(PASS_COOKIE, { path: '/' });
+		if (!event.locals.pass) event.cookies.delete(PASS_COOKIE, cookieBase(event.url));
 	}
 
 	const response = await resolve(event);

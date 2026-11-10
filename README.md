@@ -156,7 +156,9 @@ pnpm dev                         # pilih mode, lalu buka http://localhost:5173
 | **Live remote** | `pemira-db-staging` di Cloudflare               | Google asli (perlu `pnpm wrangler login`)      |
 | **Dummy local** | Lokal, diisi ulang dari `scripts/seed-demo.sql` | Pilih pengguna dummy dari daftar, tanpa Google |
 
-Mode bisa langsung dipilih: `pnpm dev staging`, `pnpm dev demo`, atau `pnpm dev local` (database lokal apa
+Server selalu dibuka ke jaringan (`--host`): perangkat lain di Wi-Fi yang sama, misalnya HP panitia, bisa
+membuka alamat **Network** yang dicetak vite. Login Google dari alamat IP tidak akan berhasil karena domain
+itu tidak terdaftar di Firebase, jadi untuk perangkat lain pakai mode demo. Mode bisa langsung dipilih: `pnpm dev staging`, `pnpm dev demo`, atau `pnpm dev local` (database lokal apa
 adanya + login Google, seperti `pnpm db:reset:local && pnpm db:seed:local && pnpm dev local`). Mode demo cocok
 untuk presentasi dan simulasi: ada super admin, dua admin, tiga Petugas TPS, 40 pemilih (18 sudah memilih),
 dan akun untuk mencoba penolakan. Login tanpa Google **hanya ada di server pengembangan**: saat build,

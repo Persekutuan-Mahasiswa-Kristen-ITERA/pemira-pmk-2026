@@ -7,8 +7,10 @@
  *                   login impersonate (pilih pengguna dari daftar, tanpa Google).
  *
  * Tanpa menu: `pnpm dev staging`, `pnpm dev demo`, atau `pnpm dev local` (database lokal apa
- * adanya + login Google, seperti sebelumnya). Argumen lain diteruskan ke vite, mis. `--host`.
- * Mode demo tidak pernah ikut ke build: lihat `__DEV_MODE__` di vite.config.ts.
+ * adanya + login Google, seperti sebelumnya). Argumen lain diteruskan ke vite, mis. `--port 5180`.
+ * Server selalu dibuka ke jaringan (`--host`): alamat "Network" dari vite bisa dibuka dari
+ * perangkat lain di Wi-Fi yang sama. Mode demo tidak pernah ikut ke build: lihat `__DEV_MODE__`
+ * di vite.config.ts.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline/promises';
@@ -73,7 +75,10 @@ if (mode === 'demo') {
 			'scripts/seed-demo.sql'
 		]);
 	}
-	console.log('\nMode demo: buka /masuk, lalu pilih pengguna dari daftar.\n');
+	console.log(
+		'\nMode demo: buka /masuk, lalu pilih pengguna dari daftar.\n' +
+			'Perangkat lain di jaringan yang sama bisa memakai alamat "Network" di bawah.\n'
+	);
 } else if (mode === 'staging') {
 	console.log(
 		'\nLive remote: data yang diubah di sini masuk ke database STAGING (bukan production).\n' +
@@ -81,7 +86,9 @@ if (mode === 'demo') {
 	);
 }
 
+// Selalu dibuka ke jaringan (mis. HP panitia di Wi-Fi yang sama), kecuali `--host` diatur sendiri.
 const viteArgs = ['dev', ...args.filter((a) => a !== '--reset')];
+if (!viteArgs.some((a) => a === '--host' || a.startsWith('--host='))) viteArgs.push('--host');
 const child = spawn(bin('vite'), viteArgs, {
 	stdio: 'inherit',
 	env: { ...process.env, PEMIRA_DEV_MODE: mode }

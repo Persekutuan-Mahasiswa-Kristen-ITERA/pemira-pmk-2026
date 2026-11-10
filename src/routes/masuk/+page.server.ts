@@ -2,6 +2,7 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { canSignIn, STUDENT_DOMAIN } from '#lib/server/access.js';
 import { getStaffRoles, recordAdminLogin, recordOfficerLogin } from '#lib/server/admins.js';
 import { SESSION_COOKIE, verifyIdToken } from '#lib/server/auth.js';
+import { cookieBase } from '#lib/server/cookies.js';
 import { getDb } from '#lib/server/db.js';
 import { DEMO_MODE, superAdminEmails } from '#lib/server/demo.js';
 import {
@@ -36,7 +37,7 @@ const CODE_FAILURES: Record<RedeemFailure, string> = {
 };
 
 export const actions: Actions = {
-	google: async ({ request, cookies }) => {
+	google: async ({ request, cookies, url }) => {
 		const idToken = String((await request.formData()).get('idToken') ?? '');
 
 		let user;
@@ -56,7 +57,7 @@ export const actions: Actions = {
 
 		const maxAge = user.expiresAt - Math.floor(Date.now() / 1000);
 		cookies.set(SESSION_COOKIE, idToken, {
-			path: '/',
+			...cookieBase(url),
 			httpOnly: true,
 			sameSite: 'lax',
 			maxAge
@@ -67,7 +68,7 @@ export const actions: Actions = {
 	},
 
 	/** Mode demo saja (`pnpm dev` → "Dummy local"): masuk sebagai pengguna dummy tanpa Google. */
-	impersonate: async ({ request, cookies }) => {
+	impersonate: async ({ request, cookies, url }) => {
 		if (!DEMO_MODE) error(404, 'Not found');
 		const email = parseDemoEmail(String((await request.formData()).get('email') ?? ''));
 		if (!email) return fail(400, { demoError: 'Pilih atau ketik email yang valid.' });
@@ -80,23 +81,28 @@ export const actions: Actions = {
 			});
 		}
 
-		cookies.delete(SESSION_COOKIE, { path: '/' });
-		cookies.delete(PASS_COOKIE, { path: '/' });
-		cookies.set(DEMO_COOKIE, email, { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 3600 });
+		cookies.delete(SESSION_COOKIE, cookieBase(url));
+		cookies.delete(PASS_COOKIE, cookieBase(url));
+		cookies.set(DEMO_COOKIE, email, {
+			...cookieBase(url),
+			httpOnly: true,
+			sameSite: 'lax',
+			maxAge: 3600
+		});
 		if (role === 'admin') await recordAdminLogin(db, email).run();
 		if (officer) await recordOfficerLogin(db, email).run();
 		redirect(303, role !== null ? '/admin' : officer ? '/petugas' : '/pilih');
 	},
 
 	/** Jalur pengecualian: masuk dengan kode dari dua admin, tanpa login Google. */
-	code: async ({ request, cookies }) => {
+	code: async ({ request, cookies, url }) => {
 		const code = String((await request.formData()).get('code') ?? '');
 		if (!code.trim()) return fail(400, { codeError: 'Masukkan kode dari panitia.' });
 
 		const result = await redeemExceptionCode(getDb(), code);
 		if (!result.ok) return fail(403, { codeError: CODE_FAILURES[result.reason] });
 
-		cookies.set(PASS_COOKIE, result.token, passCookieOptions(result.expiresAt));
+		cookies.set(PASS_COOKIE, result.token, passCookieOptions(result.expiresAt, url));
 		redirect(303, '/pilih');
 	}
 };

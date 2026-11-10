@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { nimFromEmail } from '#lib/server/access.js';
+import { cookieBase } from '#lib/server/cookies.js';
 import { getDb } from '#lib/server/db.js';
 import { candidatePhotos } from '#lib/server/candidates.js';
 import { getElectionStatus } from '#lib/server/election.js';
@@ -72,7 +73,7 @@ const UNLOCK_MESSAGES: Record<RedeemFailure, string> = {
 
 export const actions: Actions = {
 	/** Pemilih yang login Google memasukkan kode TPS dari petugas. */
-	unlock: async ({ locals, request, cookies }) => {
+	unlock: async ({ locals, request, cookies, url }) => {
 		if (!locals.user) redirect(303, '/masuk');
 		const nim = nimFromEmail(locals.user.email);
 		if (!nim) return fail(403, { unlockError: UNLOCK_MESSAGES.not_eligible });
@@ -83,11 +84,11 @@ export const actions: Actions = {
 		const result = await redeemBoothCode(getDb(), nim, code);
 		if (!result.ok) return fail(403, { unlockError: UNLOCK_MESSAGES[result.reason] });
 
-		cookies.set(PASS_COOKIE, result.token, passCookieOptions(result.expiresAt));
+		cookies.set(PASS_COOKIE, result.token, passCookieOptions(result.expiresAt, url));
 		return { unlocked: true };
 	},
 
-	vote: async ({ locals, request, cookies }) => {
+	vote: async ({ locals, request, cookies, url }) => {
 		const voter = currentVoter(locals);
 
 		const candidateId = Number((await request.formData()).get('candidate'));
@@ -105,7 +106,7 @@ export const actions: Actions = {
 		if (!result.ok) return fail(409, { error: FAILURE_MESSAGES[result.reason] });
 
 		// Izin sudah dihapus database bersama suara ini; hapus juga cookie-nya.
-		cookies.delete(PASS_COOKIE, { path: '/' });
+		cookies.delete(PASS_COOKIE, cookieBase(url));
 		return { receiptCode: result.code };
 	}
 };
