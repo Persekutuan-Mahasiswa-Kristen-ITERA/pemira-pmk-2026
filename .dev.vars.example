@@ -2,3 +2,5 @@
 # Super admin (boleh mengundang admin lain), dipisah koma.
 # Di Cloudflare Pages: pnpm wrangler pages secret put SUPER_ADMIN_EMAILS [--env preview]
 SUPER_ADMIN_EMAILS=admin@example.com
+# Penanda lingkungan di situs; production/staging diatur di wrangler.jsonc.
+APP_ENV=local

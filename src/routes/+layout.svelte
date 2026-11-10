@@ -13,6 +13,13 @@
 	const COMMIT_IS_PUBLISHED = /^[0-9a-f]{40}$/.test(COMMIT);
 
 	let path = $derived(page.url.pathname);
+
+	const PRODUCTION_URL = 'https://pemira.pmkitera.web.id';
+	const ENV_LABEL = {
+		production: 'Resmi (production)',
+		staging: 'Uji coba (staging)',
+		local: 'Lokal (komputer developer)'
+	} as const;
 </script>
 
 <svelte:head>
@@ -22,6 +29,21 @@
 <a class="skip" href="#konten">Lewati ke konten</a>
 
 <header class="topbar">
+	{#if data.appEnv !== 'production'}
+		<div class="env-ribbon" role="note">
+			<div class="container env-inner">
+				{#if data.appEnv === 'staging'}
+					<p>
+						<strong>Situs uji coba.</strong> Database terpisah; suara di sini tidak dihitung dalam pemilihan
+						resmi.
+					</p>
+					<a href={PRODUCTION_URL} rel="external">Ke situs resmi →</a>
+				{:else}
+					<p><strong>Pengembangan lokal.</strong> Memakai database lokal di komputer ini.</p>
+				{/if}
+			</div>
+		</div>
+	{/if}
 	<div class="container topbar-inner" class:crowded={data.isAdmin && data.userEmail}>
 		<a class="brand" href={resolve('/')} aria-label="Pemira PMK ITERA, beranda">
 			<Seal size={42} />
@@ -59,6 +81,10 @@
 		<p class="motto">Suara yang bijak, <em>pelayanan yang berdampak.</em></p>
 		<div class="footer-meta">
 			<p>Persekutuan Mahasiswa Kristen · Institut Teknologi Sumatera</p>
+			<p class="env-line" data-env={data.appEnv}>
+				<span class="env-dot" aria-hidden="true"></span>
+				Database: <strong>{ENV_LABEL[data.appEnv]}</strong>
+			</p>
 			<p>
 				Kode sumber terbuka untuk diaudit di
 				<a href={REPO_URL} rel="noopener">GitHub</a>
@@ -273,6 +299,59 @@
 
 	.motto em {
 		color: var(--gold);
+	}
+
+	/* Penanda lingkungan uji coba: pita bergaris di atas header */
+	.env-ribbon {
+		background: repeating-linear-gradient(-45deg, var(--gold) 0 14px, var(--gold-light) 14px 28px);
+		color: var(--ink);
+		font-size: 13px;
+	}
+
+	.env-inner {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 2px 16px;
+		padding-block: 7px;
+	}
+
+	.env-inner p {
+		padding: 1px 8px;
+		border-radius: 4px;
+		background: rgb(247 243 234 / 0.85);
+	}
+
+	.env-inner a {
+		padding: 1px 8px;
+		border-radius: 4px;
+		background: var(--ink);
+		font-weight: 800;
+		color: var(--paper-light);
+		text-decoration: none;
+	}
+
+	.env-line {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.env-line strong {
+		color: var(--paper-light);
+	}
+
+	.env-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: var(--gold);
+	}
+
+	.env-line[data-env='production'] .env-dot {
+		background: #8fb55a;
+		box-shadow: 0 0 0 3px rgb(143 181 90 / 0.25);
 	}
 
 	.footer-meta {

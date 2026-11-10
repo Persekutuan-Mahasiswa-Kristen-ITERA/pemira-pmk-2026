@@ -7,6 +7,9 @@
 	"compatibility_flags": ["nodejs_als"],
 	"pages_build_output_dir": ".svelte-kit/cloudflare",
 	// Production (branch `main`). ID database bukan rahasia.
+	// APP_ENV ditampilkan di situs (pita "uji coba" dan footer), dan selalu didefinisikan di blok
+	// yang sama dengan database-nya supaya label dan database yang dipakai tidak mungkin berbeda.
+	"vars": { "APP_ENV": "production" },
 	"d1_databases": [
 		{
 			"binding": "DB",
@@ -19,6 +22,7 @@
 		// Preview (semua branch selain `main`, termasuk `staging`): untuk simulasi/uji coba,
 		// memakai database terpisah dari production.
 		"preview": {
+			"vars": { "APP_ENV": "staging" },
 			"d1_databases": [
 				{
 					"binding": "DB",

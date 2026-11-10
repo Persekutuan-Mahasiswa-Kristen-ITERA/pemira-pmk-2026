@@ -95,6 +95,9 @@ tetapi **jangan memindahkan** aturan dari trigger ke kode aplikasi.
 
 - Di Cloudflare Pages, branch `main` adalah production; semua branch lain memakai konfigurasi
   `env.preview` di `wrangler.jsonc` (database staging).
+- Variabel `APP_ENV` (`production`/`staging`, di `wrangler.jsonc` pada blok yang sama dengan database-nya)
+  ditampilkan di situs: staging dan lokal diberi pita "uji coba" di atas header, dan footer selalu
+  menyebut database yang dipakai.
 - Secret diatur per lingkungan, tidak pernah di repo:
   ```sh
   pnpm wrangler pages secret put SUPER_ADMIN_EMAILS                 # production
