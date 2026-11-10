@@ -1,0 +1,7 @@
+allowBuilds:
+  workerd: true
+  esbuild: true
+  # Skrip install kedua paket ini tidak diperlukan
+  '@firebase/util': false
+  protobufjs: false
+engineStrict: true

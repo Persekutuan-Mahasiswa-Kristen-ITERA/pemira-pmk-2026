@@ -1,0 +1,38 @@
+node_modules
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Cloudflare: secret lokal
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# Data pribadi: daftar pemilih (DPT) tidak boleh masuk repo publik
+/data/
+*.csv
+# ...kecuali folder rute unduhan hasil (bukan berkas data)
+!/src/routes/hasil/surat-suara.csv/
+*.xlsx
+
+# Dibuat otomatis oleh `pnpm gen` (dijalankan sebelum check/build)
+worker-configuration.d.ts
