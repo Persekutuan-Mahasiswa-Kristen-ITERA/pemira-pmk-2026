@@ -19,6 +19,10 @@ Browser ──► Cloudflare Pages (SvelteKit, server-side) ──► Cloudflare
   cookie itu menjadi `locals.user`. Sesi berakhir saat token kedaluwarsa (maks. 1 jam).
 - **Siapa boleh masuk**: email `@student.itera.ac.id`, atau email yang ada di secret `ADMIN_EMAILS`.
   Masuk bukan berarti boleh memilih: hak pilih ditentukan tabel `voters` (DPT).
+- **Identitas pemilih = NIM**: NIM diambil dari email yang sudah diverifikasi Google
+  (`nama.nim@student.itera.ac.id`, lihat `nimFromEmail` di `src/lib/server/access.ts`) lalu dicocokkan ke
+  `voters.nim`. Email dibuat kampus, jadi NIM di dalamnya dapat dipercaya. DPT dari kampus tidak selalu
+  memuat email, sedangkan NIM selalu ada; DPT hanya menyimpan NIM dan nama.
 - **Proxy auth**: di domain selain localhost, `authDomain` Firebase diarahkan ke domain situs sendiri dan
   `/__/auth/*` serta `/__/firebase/*` diteruskan ke `pemira-pmk-itera.firebaseapp.com`
   (`src/lib/server/firebase-proxy.ts`). Ini menghindari error _missing initial state_ akibat partisi
@@ -33,7 +37,7 @@ Browser ──► Cloudflare Pages (SvelteKit, server-side) ──► Cloudflare
 | `migrations/0001_init.sql`  | Skema dan **semua aturan pemilihan** dalam bentuk trigger                 |
 | `src/lib/server/vote.ts`    | Status pemilih dan pencatatan suara (`castVote`)                          |
 | `src/lib/server/auth.ts`    | Verifikasi Firebase ID token                                              |
-| `src/lib/server/access.ts`  | Aturan domain email dan admin                                             |
+| `src/lib/server/access.ts`  | Aturan domain email, NIM dari email, dan admin                            |
 | `src/lib/server/admin.ts`   | `requireAdmin`, pencatatan audit log                                      |
 | `src/lib/server/results.ts` | Rekap, daftar surat suara, CSV + SHA-256                                  |
 | `src/lib/server/dpt.ts`     | Parser CSV DPT dan sidik jari DPT                                         |
@@ -50,7 +54,7 @@ yang dipilih (`ballots`). Karena itu:
 
 1. **Jangan tambahkan** timestamp, id berurutan, `rowid`, atau kolom apa pun yang menyimpan urutan ke tabel
    `ballots`. Tabel ini sengaja `WITHOUT ROWID` dengan primary key berupa kode acak.
-2. **Jangan pernah mencatat** (log, audit log, pesan error, analytics) email bersama pilihan calon atau
+2. **Jangan pernah mencatat** (log, audit log, pesan error, analytics) NIM/email bersama pilihan calon atau
    kode tanda terima. Kode tanda terima juga tidak disimpan di sisi pemilih (cookie/storage).
 3. Penulisan `voted` dan `ballots` **harus tetap dalam satu `db.batch`** (satu transaksi), supaya tidak ada
    surat suara tanpa pemilih atau sebaliknya.

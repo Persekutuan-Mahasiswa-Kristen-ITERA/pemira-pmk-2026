@@ -53,13 +53,15 @@
 		}}
 	>
 		<p class="hint">
-			Berkas CSV dengan kolom <code>email</code> dan <code>nama</code>, satu pemilih per baris (bisa
-			diekspor dari Excel/Google Sheets). Email harus <code>@student.itera.ac.id</code>. Impor
+			Berkas CSV dengan kolom <code>nim</code> dan <code>nama</code>, satu pemilih per baris (bisa
+			diekspor dari Excel/Google Sheets dengan "Simpan sebagai CSV"). Kolom lain seperti email atau
+			prodi boleh ada; kolom itu diabaikan dan tidak disimpan. Pemilih dicocokkan lewat NIM di email
+			login (<code>nama.nim@student.itera.ac.id</code>). Impor
 			<strong>mengganti seluruh DPT</strong> yang ada.
 		</p>
-		<pre class="mono example">email,nama
-budi.122140001@student.itera.ac.id,Budi Simanjuntak
-ani.122140002@student.itera.ac.id,Ani Situmorang</pre>
+		<pre class="mono example">nim,nama
+122140001,Budi Simanjuntak
+122140002,Ani Situmorang</pre>
 		<label class="field">
 			Berkas CSV
 			<input type="file" name="file" accept=".csv,text/csv" required />

@@ -2,13 +2,15 @@ import { generateReceiptCode } from './receipt';
 
 export type VoterState = 'not_eligible' | 'already_voted' | 'can_vote';
 
-export async function getVoterState(db: D1Database, email: string): Promise<VoterState> {
+/** `nim` diambil dari email login dengan `nimFromEmail`; `null` berarti bukan pemilih. */
+export async function getVoterState(db: D1Database, nim: string | null): Promise<VoterState> {
+	if (!nim) return 'not_eligible';
 	const row = await db
 		.prepare(
-			`SELECT EXISTS (SELECT 1 FROM voters WHERE email = ?1) AS eligible,
-			        EXISTS (SELECT 1 FROM voted WHERE email = ?1) AS voted`
+			`SELECT EXISTS (SELECT 1 FROM voters WHERE nim = ?1) AS eligible,
+			        EXISTS (SELECT 1 FROM voted WHERE nim = ?1) AS voted`
 		)
-		.bind(email)
+		.bind(nim)
 		.first<{ eligible: number; voted: number }>();
 	if (!row?.eligible) return 'not_eligible';
 	if (row.voted) return 'already_voted';
@@ -25,8 +27,8 @@ export type CastVoteResult = { ok: true; code: string } | { ok: false; reason: C
  *
  * Penanda "sudah memilih" dan surat suara anonim disimpan dalam satu `batch`
  * (transaksi D1): jika salah satu gagal, keduanya batal. Semua aturan
- * (jendela waktu, DPT, satu suara per email) ditegakkan oleh trigger dan
- * constraint di migrations/0001_init.sql; fungsi ini hanya menerjemahkan
+ * (jendela waktu, DPT, satu suara per NIM) ditegakkan oleh trigger dan
+ * constraint di migrations/; fungsi ini hanya menerjemahkan
  * penolakan database menjadi pesan yang bisa dipahami.
  *
  * Kode tanda terima dikembalikan ke pemilih dan TIDAK disimpan bersama
@@ -34,7 +36,7 @@ export type CastVoteResult = { ok: true; code: string } | { ok: false; reason: C
  */
 export async function castVote(
 	db: D1Database,
-	email: string,
+	nim: string,
 	candidateId: number,
 	generateCode: () => string = generateReceiptCode
 ): Promise<CastVoteResult> {
@@ -44,7 +46,7 @@ export async function castVote(
 		const code = generateCode();
 		try {
 			await db.batch([
-				db.prepare('INSERT INTO voted (email) VALUES (?)').bind(email),
+				db.prepare('INSERT INTO voted (nim) VALUES (?)').bind(nim),
 				db.prepare('INSERT INTO ballots (code, candidate_id) VALUES (?, ?)').bind(code, candidateId)
 			]);
 			return { ok: true, code };
@@ -52,7 +54,7 @@ export async function castVote(
 			const message = err instanceof Error ? err.message : String(err);
 			if (message.includes('voting_closed')) return { ok: false, reason: 'voting_closed' };
 			if (message.includes('not_eligible')) return { ok: false, reason: 'not_eligible' };
-			if (message.includes('voted.email')) return { ok: false, reason: 'already_voted' };
+			if (message.includes('voted.nim')) return { ok: false, reason: 'already_voted' };
 			if (message.includes('FOREIGN KEY')) return { ok: false, reason: 'invalid_candidate' };
 			if (message.includes('ballots.code')) continue;
 			throw err;

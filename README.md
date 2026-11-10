@@ -26,8 +26,8 @@ Kode sumbernya publik supaya siapa pun bisa mengaudit cara suara dicatat dan dih
 
 | Prinsip                      | Penerapan                                                                                                                       |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| 🎓 **Hanya pemilih sah**     | Login Google dengan email `@student.itera.ac.id` yang terdaftar di DPT (mahasiswa Kristen aktif).                               |
-| ☝️ **Satu orang satu suara** | Email hanya bisa tercatat sekali; penanda "sudah memilih" dan surat suara disimpan dalam satu transaksi.                        |
+| 🎓 **Hanya pemilih sah**     | Login Google dengan email `nama.nim@student.itera.ac.id`; NIM di email harus terdaftar di DPT (mahasiswa Kristen aktif).        |
+| ☝️ **Satu orang satu suara** | Setiap NIM hanya bisa tercatat sekali; penanda "sudah memilih" dan surat suara disimpan dalam satu transaksi.                   |
 | 🤫 **Rahasia**               | Identitas (`voted`) dan isi suara (`ballots`) disimpan terpisah tanpa penghubung, tanpa timestamp, tanpa urutan.                |
 | 🔍 **Bisa diverifikasi**     | Setiap pemilih mendapat kode tanda terima acak. Setelah ditutup, daftar `kode → calon` dipublikasikan untuk dicek dan dihitung. |
 | 🔒 **Tidak bisa diubah**     | Surat suara, penanda sudah memilih, dan audit log tidak bisa diubah/dihapus. DPT, calon, dan jadwal terkunci saat dibuka.       |
@@ -48,7 +48,7 @@ sequenceDiagram
     P->>S: Login Google (@student.itera.ac.id)
     S->>DB: Terdaftar di DPT? Sudah memilih?
     P->>S: Pilih calon + konfirmasi
-    S->>DB: Satu transaksi: catat "sudah memilih" (email)<br/>+ surat suara (kode acak → calon), tanpa penghubung
+    S->>DB: Satu transaksi: catat "sudah memilih" (NIM)<br/>+ surat suara (kode acak → calon), tanpa penghubung
     S-->>P: Kode tanda terima, mis. 7KQ2M-X9D4P (hanya sekali)
     Note over S,DB: Setelah ditutup
     S-->>P: Rekap + daftar semua kode → calon (CSV + SHA-256)

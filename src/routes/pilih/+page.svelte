@@ -63,10 +63,15 @@
 		</p>
 	{:else if data.voterState === 'not_eligible'}
 		<p class="eyebrow">Surat suara</p>
-		<h1>Email kamu tidak terdaftar di DPT.</h1>
+		<h1>Kamu tidak terdaftar di DPT.</h1>
 		<p class="lead">
-			Kamu masuk sebagai <strong>{data.email}</strong>. Jika kamu mahasiswa Kristen aktif ITERA dan
-			merasa seharusnya terdaftar, hubungi panitia Pemira.
+			Kamu masuk sebagai <strong>{data.email}</strong>.
+			{#if data.nim}
+				NIM <strong>{data.nim}</strong> tidak ada di daftar pemilih.
+			{:else}
+				Email ini tidak memuat NIM mahasiswa, jadi tidak bisa dicocokkan dengan DPT.
+			{/if}
+			Jika kamu mahasiswa Kristen aktif ITERA dan merasa seharusnya terdaftar, hubungi panitia Pemira.
 		</p>
 	{:else if data.voterState === 'already_voted'}
 		<p class="eyebrow">Surat suara</p>

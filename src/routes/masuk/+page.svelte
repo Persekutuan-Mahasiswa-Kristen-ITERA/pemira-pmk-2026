@@ -65,8 +65,8 @@
 	<p class="eyebrow">Masuk</p>
 	<h1>Gunakan akun Google ITERA</h1>
 	<p class="lead">
-		Masuk dengan email <strong>nama.nim@{data.studentDomain}</strong>. Hanya mahasiswa yang
-		terdaftar di DPT yang dapat memberikan suara.
+		Masuk dengan email <strong>nama.nim@{data.studentDomain}</strong>. NIM di emailmu dicocokkan
+		dengan DPT; hanya mahasiswa yang terdaftar yang dapat memberikan suara.
 	</p>
 
 	<button class="button" type="button" onclick={() => login()} disabled={busy} aria-busy={busy}>
@@ -85,8 +85,8 @@
 	</p>
 
 	<p class="note">
-		Kami hanya menerima alamat email dan nama dari Google untuk mencocokkan DPT. Pilihanmu tidak
-		pernah disimpan bersama identitasmu.
+		Kami hanya menerima alamat email dan nama dari Google; NIM di email dipakai untuk mencocokkan
+		DPT. Pilihanmu tidak pernah disimpan bersama identitasmu.
 	</p>
 </section>
 

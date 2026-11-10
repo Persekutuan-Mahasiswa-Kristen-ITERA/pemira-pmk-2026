@@ -16,7 +16,7 @@
 	const steps = [
 		{
 			title: 'Masuk dengan email ITERA',
-			body: 'Gunakan akun Google nama.nim@student.itera.ac.id yang terdaftar di DPT.'
+			body: 'Gunakan akun Google nama.nim@student.itera.ac.id. NIM-mu harus terdaftar di DPT.'
 		},
 		{
 			title: 'Pilih satu calon',

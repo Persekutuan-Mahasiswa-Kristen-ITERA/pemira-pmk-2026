@@ -18,10 +18,11 @@ Admin aplikasi adalah email yang terdaftar di secret `ADMIN_EMAILS` (diatur deve
 
 ### 1. Persiapan (± 2 minggu sebelum hari pemilihan)
 
-1. **Susun DPT** dalam spreadsheet dengan dua kolom: `email` dan `nama`. Email harus
-   `nama.nim@student.itera.ac.id`. Simpan sebagai CSV.
+1. **Susun DPT** dalam spreadsheet dengan kolom `nim` dan `nama`, lalu simpan sebagai CSV. Ekspor data
+   kampus boleh langsung dipakai: kolom lain (email, prodi, angkatan, dst.) diabaikan dan tidak disimpan.
+   Pemilih dicocokkan lewat NIM di email login `nama.nim@student.itera.ac.id`, jadi kolom email tidak wajib.
    - Berkas DPT adalah **data pribadi**. Jangan dibagikan di grup chat atau diunggah ke tempat publik.
-2. **Umumkan DPT sementara** dalam bentuk jumlah pemilih (atau daftar nama tanpa email), lalu buka
+2. **Umumkan DPT sementara** dalam bentuk jumlah pemilih (atau daftar nama tanpa NIM), lalu buka
    **masa sanggah** bagi anggota yang belum terdaftar.
 3. Setelah masa sanggah: buka **Admin → DPT**, impor CSV final. Catat **sidik jari DPT (SHA-256)** yang
    muncul dan umumkan bersama jumlah pemilih. Jika DPT diubah diam-diam, sidik jarinya akan berbeda.
@@ -35,7 +36,7 @@ Admin aplikasi adalah email yang terdaftar di secret `ADMIN_EMAILS` (diatur deve
 ### 2. Simulasi (± 1 minggu sebelumnya, di situs staging)
 
 1. **(developer)** Kosongkan database staging: `pnpm db:reset:staging`.
-2. Di situs staging, panitia memasukkan DPT uji (berisi email panitia/saksi), calon contoh, dan jadwal
+2. Di situs staging, panitia memasukkan DPT uji (berisi NIM panitia/saksi yang punya email mahasiswa), calon contoh, dan jadwal
    pendek (mis. 30 menit).
 3. Panitia dan saksi mencoba: login, memilih, menyimpan kode tanda terima, mencoba memilih dua kali (harus
    ditolak), lalu memeriksa kode di halaman Hasil setelah ditutup.
@@ -55,7 +56,7 @@ Admin aplikasi adalah email yang terdaftar di secret `ADMIN_EMAILS` (diatur deve
   - Jumlah "Sudah memilih" harus selalu sama dengan jumlah "Surat suara". Jika berbeda, muncul peringatan
     merah: hentikan dan periksa bersama saksi.
 - Ingatkan pemilih untuk **menyimpan kode tanda terima** dan **tidak memberikannya kepada siapa pun**.
-- Pemilih yang gagal login atau merasa seharusnya terdaftar: catat email dan kendalanya. DPT tidak bisa
+- Pemilih yang gagal login atau merasa seharusnya terdaftar: catat NIM, email, dan kendalanya. DPT tidak bisa
   diubah lagi setelah pemungutan suara dibuka.
 - **Tutup darurat** (Admin → Ringkasan) hanya jika ada masalah serius, dengan persetujuan saksi. Alasan
   wajib diisi dan tercatat di audit log. Pemungutan suara tidak bisa dibuka kembali.

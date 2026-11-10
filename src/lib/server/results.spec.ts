@@ -13,15 +13,14 @@ beforeEach(async () => {
 	raw.exec(
 		`INSERT INTO candidates (id, number, name) VALUES (1, 1, 'Satu'), (2, 2, 'Dua'), (3, 3, 'Tiga')`
 	);
-	raw.exec(`INSERT INTO voters (email, name) VALUES
-		('a.1@student.itera.ac.id', 'A'), ('b.2@student.itera.ac.id', 'B'),
-		('c.3@student.itera.ac.id', 'C'), ('d.4@student.itera.ac.id', 'D')`);
+	raw.exec(`INSERT INTO voters (nim, name) VALUES
+		('100000001', 'A'), ('100000002', 'B'), ('100000003', 'C'), ('100000004', 'D')`);
 	raw.exec(
 		'UPDATE election_config SET opens_at = unixepoch() - 60, closes_at = unixepoch() + 3600'
 	);
-	await castVote(db, 'a.1@student.itera.ac.id', 2, () => 'CCCCC-CCCCC');
-	await castVote(db, 'b.2@student.itera.ac.id', 1, () => 'AAAAA-AAAAA');
-	await castVote(db, 'c.3@student.itera.ac.id', 2, () => 'BBBBB-BBBBB');
+	await castVote(db, '100000001', 2, () => 'CCCCC-CCCCC');
+	await castVote(db, '100000002', 1, () => 'AAAAA-AAAAA');
+	await castVote(db, '100000003', 2, () => 'BBBBB-BBBBB');
 });
 
 describe('hasil', () => {

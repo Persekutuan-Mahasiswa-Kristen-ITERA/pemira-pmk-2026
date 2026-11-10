@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { asD1, freshDb } from './testing/sqlite';
 import { castVote, getVoterState } from './vote';
 
-const ALICE = 'alice.122140001@student.itera.ac.id';
-const BOB = 'bob.122140002@student.itera.ac.id';
-const OUTSIDER = 'eve.122140099@student.itera.ac.id';
+const ALICE = '122140001';
+const BOB = '122140002';
+const OUTSIDER = '122140099';
 
 let raw: DatabaseSync;
 let db: D1Database;
@@ -25,13 +25,14 @@ beforeEach(() => {
 	raw = freshDb();
 	db = asD1(raw);
 	raw.exec(`INSERT INTO candidates (id, number, name) VALUES (1, 1, 'Satu'), (2, 2, 'Dua')`);
-	raw.prepare('INSERT INTO voters (email, name) VALUES (?, ?), (?, ?)').run(ALICE, 'A', BOB, 'B');
+	raw.prepare('INSERT INTO voters (nim, name) VALUES (?, ?), (?, ?)').run(ALICE, 'A', BOB, 'B');
 });
 
 describe('getVoterState', () => {
 	it('membedakan bukan pemilih, belum memilih, dan sudah memilih', async () => {
 		setSchedule(-60, 3600);
 		expect(await getVoterState(db, OUTSIDER)).toBe('not_eligible');
+		expect(await getVoterState(db, null)).toBe('not_eligible');
 		expect(await getVoterState(db, ALICE)).toBe('can_vote');
 		await castVote(db, ALICE, 1);
 		expect(await getVoterState(db, ALICE)).toBe('already_voted');
@@ -50,7 +51,7 @@ describe('castVote', () => {
 		]);
 	});
 
-	it('menolak suara kedua dari email yang sama', async () => {
+	it('menolak suara kedua dari NIM yang sama', async () => {
 		setSchedule(-60, 3600);
 		await castVote(db, ALICE, 1);
 		expect(await castVote(db, ALICE, 2)).toEqual({ ok: false, reason: 'already_voted' });
@@ -62,7 +63,7 @@ describe('castVote', () => {
 		expect(await castVote(db, ALICE, 1)).toEqual({ ok: false, reason: 'voting_closed' });
 	});
 
-	it('menolak email di luar DPT', async () => {
+	it('menolak NIM di luar DPT', async () => {
 		setSchedule(-60, 3600);
 		expect(await castVote(db, OUTSIDER, 1)).toEqual({ ok: false, reason: 'not_eligible' });
 	});

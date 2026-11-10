@@ -1,8 +1,8 @@
-import { isStudentEmail, normalizeEmail } from './access';
+import { isValidNim } from './access';
 import { sha256Hex } from './hash';
 
 export interface DptVoter {
-	email: string;
+	nim: string;
 	name: string;
 }
 
@@ -11,7 +11,7 @@ export interface DptParseResult {
 	errors: string[];
 }
 
-/** Pisahkan satu baris CSV; mendukung tanda kutip ganda dan pemisah `,` atau `;` (Excel). */
+/** Pisahkan satu baris CSV; mendukung tanda kutip ganda. */
 function splitCsvLine(line: string, delimiter: string): string[] {
 	const cells: string[] = [];
 	let current = '';
@@ -40,9 +40,22 @@ function splitCsvLine(line: string, delimiter: string): string[] {
 	return cells.map((c) => c.trim());
 }
 
+/** Pemisah ditentukan sekali dari baris pertama: `;` (Excel berbahasa Indonesia) atau `,`. */
+function detectDelimiter(firstLine: string): string {
+	const outsideQuotes = firstLine.replace(/"[^"]*"/g, '');
+	const semicolons = outsideQuotes.split(';').length - 1;
+	const commas = outsideQuotes.split(',').length - 1;
+	return semicolons > commas ? ';' : ',';
+}
+
+const NIM_HEADERS = ['nim'];
+const NAME_HEADERS = ['nama', 'name', 'nama mahasiswa'];
+
 /**
- * Baca DPT dari teks CSV dengan dua kolom: email dan nama (urutan bebas, baris
- * judul opsional). Jika ada satu saja baris yang salah, seluruh impor ditolak
+ * Baca DPT dari teks CSV. Kolom yang dipakai hanya `nim` dan `nama`; kolom lain
+ * (email, prodi, angkatan, dst.) diabaikan dan tidak disimpan, sehingga ekspor data
+ * kampus bisa langsung diunggah. Tanpa baris judul, kolom NIM dikenali sebagai sel
+ * yang seluruhnya angka. Jika ada satu saja baris yang salah, seluruh impor ditolak
  * supaya DPT yang masuk selalu utuh.
  */
 export function parseDpt(text: string): DptParseResult {
@@ -51,44 +64,42 @@ export function parseDpt(text: string): DptParseResult {
 	const errors: string[] = [];
 	const seen = new Set<string>();
 
-	let emailIndex: number | null = null;
+	let delimiter: string | null = null;
+	let nimIndex: number | null = null;
 	let nameIndex: number | null = null;
-	let first = true;
 
 	lines.forEach((rawLine, i) => {
 		const line = rawLine.trim();
 		if (!line) return;
-		const delimiter = line.includes(';') && !line.includes(',') ? ';' : ',';
-		const cells = splitCsvLine(line, delimiter);
 
-		if (first) {
-			first = false;
-			const lower = cells.map((c) => c.toLowerCase());
-			const headerEmail = lower.findIndex((c) => c === 'email' || c === 'e-mail');
-			if (headerEmail !== -1) {
-				emailIndex = headerEmail;
-				const headerName = lower.findIndex((c) => c === 'nama' || c === 'name');
+		if (delimiter === null) {
+			delimiter = detectDelimiter(line);
+			const lower = splitCsvLine(line, delimiter).map((c) => c.toLowerCase());
+			const headerNim = lower.findIndex((c) => NIM_HEADERS.includes(c));
+			if (headerNim !== -1) {
+				nimIndex = headerNim;
+				const headerName = lower.findIndex((c) => NAME_HEADERS.includes(c));
 				nameIndex = headerName !== -1 ? headerName : null;
 				return;
 			}
 		}
 
-		const ei = emailIndex ?? cells.findIndex((c) => c.includes('@'));
-		const rawEmail = ei >= 0 ? (cells[ei] ?? '') : '';
-		const email = normalizeEmail(rawEmail);
-		const ni = nameIndex ?? cells.findIndex((_, idx) => idx !== ei);
-		const name = ni >= 0 ? (cells[ni] ?? '') : '';
+		const cells = splitCsvLine(line, delimiter);
+		const ni = nimIndex ?? cells.findIndex((c) => /^\d+$/.test(c));
+		const nim = ni >= 0 ? (cells[ni] ?? '') : '';
+		const nmi = nameIndex ?? (nimIndex === null ? cells.findIndex((_, idx) => idx !== ni) : -1);
+		const name = nmi >= 0 ? (cells[nmi] ?? '') : '';
 
-		if (!isStudentEmail(email)) {
-			errors.push(`Baris ${i + 1}: email tidak valid "${rawEmail || line}"`);
+		if (!isValidNim(nim)) {
+			errors.push(`Baris ${i + 1}: NIM tidak valid "${nim || line}"`);
 			return;
 		}
-		if (seen.has(email)) {
-			errors.push(`Baris ${i + 1}: email ganda ${email}`);
+		if (seen.has(nim)) {
+			errors.push(`Baris ${i + 1}: NIM ganda ${nim}`);
 			return;
 		}
-		seen.add(email);
-		voters.push({ email, name });
+		seen.add(nim);
+		voters.push({ nim, name });
 	});
 
 	if (voters.length === 0 && errors.length === 0) errors.push('Berkas tidak berisi data pemilih.');
@@ -96,9 +107,32 @@ export function parseDpt(text: string): DptParseResult {
 }
 
 /**
- * Sidik jari DPT: SHA-256 dari daftar email (urut abjad, satu per baris).
+ * Sidik jari DPT: SHA-256 dari daftar NIM (urut, satu per baris).
  * Bisa diumumkan tanpa membuka isi DPT; perubahan sekecil apa pun mengubah hash.
  */
-export function dptFingerprint(emails: string[]): Promise<string> {
-	return sha256Hex([...emails].sort().join('\n'));
+export function dptFingerprint(nims: string[]): Promise<string> {
+	return sha256Hex([...nims].sort().join('\n'));
+}
+
+/**
+ * Jumlah baris per statement. Seluruh potongan dikirim sebagai SATU parameter JSON
+ * (`json_each`), sehingga 4.500 pemilih cukup 5 statement: aman terhadap batas D1
+ * 100 parameter per statement dan batas jumlah query per request.
+ */
+export const DPT_ROWS_PER_STATEMENT = 1000;
+
+export function dptInsertStatements(db: D1Database, voters: DptVoter[]): D1PreparedStatement[] {
+	const statements: D1PreparedStatement[] = [];
+	for (let i = 0; i < voters.length; i += DPT_ROWS_PER_STATEMENT) {
+		const chunk = voters.slice(i, i + DPT_ROWS_PER_STATEMENT).map((v) => [v.nim, v.name]);
+		statements.push(
+			db
+				.prepare(
+					`INSERT INTO voters (nim, name)
+					 SELECT json_extract(value, '$[0]'), json_extract(value, '$[1]') FROM json_each(?)`
+				)
+				.bind(JSON.stringify(chunk))
+		);
+	}
+	return statements;
 }

@@ -5,7 +5,9 @@
  * yang sama dengan Cloudflare D1. Transaksi BEGIN/COMMIT di sini meniru
  * `DB.batch()` di D1, yang juga atomik.
  */
-import type { DatabaseSync } from 'node:sqlite';
+import { DatabaseSync } from 'node:sqlite';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { freshDb } from '../testing/sqlite';
 
@@ -19,10 +21,10 @@ function setSchedule(db: DatabaseSync, opensAt: number, closesAt: number) {
 }
 
 /** Meniru alur suara di aplikasi: dua insert dalam satu transaksi. */
-function castVote(db: DatabaseSync, email: string, code: string, candidateId: number) {
+function castVote(db: DatabaseSync, nim: string, code: string, candidateId: number) {
 	db.exec('BEGIN');
 	try {
-		db.prepare('INSERT INTO voted (email) VALUES (?)').run(email);
+		db.prepare('INSERT INTO voted (nim) VALUES (?)').run(nim);
 		db.prepare('INSERT INTO ballots (code, candidate_id) VALUES (?, ?)').run(code, candidateId);
 		db.exec('COMMIT');
 	} catch (err) {
@@ -34,9 +36,9 @@ function castVote(db: DatabaseSync, email: string, code: string, candidateId: nu
 const count = (db: DatabaseSync, table: string) =>
 	(db.prepare(`SELECT count(*) AS n FROM ${table}`).get() as { n: number }).n;
 
-const ALICE = 'alice.122140001@student.itera.ac.id';
-const BOB = 'bob.122140002@student.itera.ac.id';
-const OUTSIDER = 'eve.122140099@student.itera.ac.id';
+const ALICE = '122140001';
+const BOB = '122140002';
+const OUTSIDER = '122140099';
 
 let db: DatabaseSync;
 
@@ -46,7 +48,7 @@ beforeEach(() => {
 		'Calon Satu',
 		'Calon Dua'
 	);
-	db.prepare('INSERT INTO voters (email, name) VALUES (?, ?), (?, ?)').run(
+	db.prepare('INSERT INTO voters (nim, name) VALUES (?, ?), (?, ?)').run(
 		ALICE,
 		'Alice',
 		BOB,
@@ -69,8 +71,8 @@ describe('sebelum pemilihan dibuka', () => {
 	it('masih boleh mengubah jadwal, DPT, dan calon', () => {
 		setSchedule(db, now() + 3600, now() + 7200);
 		setSchedule(db, now() + 1800, now() + 9000);
-		db.prepare('INSERT INTO voters (email, name) VALUES (?, ?)').run(OUTSIDER, 'Eve');
-		db.prepare('DELETE FROM voters WHERE email = ?').run(OUTSIDER);
+		db.prepare('INSERT INTO voters (nim, name) VALUES (?, ?)').run(OUTSIDER, 'Eve');
+		db.prepare('DELETE FROM voters WHERE nim = ?').run(OUTSIDER);
 		db.prepare('UPDATE candidates SET vision = ? WHERE id = 1').run('Visi baru');
 		expect(count(db, 'voters')).toBe(2);
 	});
@@ -85,7 +87,7 @@ describe('saat pemilihan berlangsung', () => {
 
 	it('mencatat pemilih dan surat suara secara terpisah', () => {
 		castVote(db, ALICE, 'AAAA-BBBB', 2);
-		expect(db.prepare('SELECT * FROM voted').all()).toEqual([{ email: ALICE }]);
+		expect(db.prepare('SELECT * FROM voted').all()).toEqual([{ nim: ALICE }]);
 		expect(db.prepare('SELECT * FROM ballots').all()).toEqual([
 			{ code: 'AAAA-BBBB', candidate_id: 2 }
 		]);
@@ -98,7 +100,7 @@ describe('saat pemilihan berlangsung', () => {
 		expect(count(db, 'ballots')).toBe(1);
 	});
 
-	it('menolak email yang tidak ada di DPT', () => {
+	it('menolak NIM yang tidak ada di DPT', () => {
 		expect(() => castVote(db, OUTSIDER, 'AAAA-BBBB', 1)).toThrow(/not_eligible/);
 		expect(count(db, 'ballots')).toBe(0);
 	});
@@ -122,17 +124,15 @@ describe('saat pemilihan berlangsung', () => {
 
 	it('penanda sudah memilih tidak bisa diubah atau dihapus', () => {
 		castVote(db, ALICE, 'AAAA-BBBB', 1);
-		expect(() => db.exec(`UPDATE voted SET email = '${BOB}'`)).toThrow(/voted_immutable/);
+		expect(() => db.exec(`UPDATE voted SET nim = '${BOB}'`)).toThrow(/voted_immutable/);
 		expect(() => db.exec('DELETE FROM voted')).toThrow(/voted_immutable/);
 	});
 
 	it('DPT terkunci', () => {
 		expect(() =>
-			db.prepare('INSERT INTO voters (email, name) VALUES (?, ?)').run(OUTSIDER, 'Eve')
+			db.prepare('INSERT INTO voters (nim, name) VALUES (?, ?)').run(OUTSIDER, 'Eve')
 		).toThrow(/voters_locked/);
-		expect(() => db.prepare('DELETE FROM voters WHERE email = ?').run(BOB)).toThrow(
-			/voters_locked/
-		);
+		expect(() => db.prepare('DELETE FROM voters WHERE nim = ?').run(BOB)).toThrow(/voters_locked/);
 		expect(() => db.exec("UPDATE voters SET name = 'X'")).toThrow(/voters_locked/);
 	});
 
@@ -203,12 +203,14 @@ describe('kerahasiaan dan integritas data', () => {
 		expect(() => db.exec('SELECT rowid FROM ballots')).toThrow(/no such column/);
 	});
 
-	it('email DPT harus huruf kecil dan berdomain student.itera.ac.id', () => {
-		const insert = db.prepare('INSERT INTO voters (email, name) VALUES (?, ?)');
-		expect(() => insert.run('Carol.122140003@student.itera.ac.id', 'Carol')).toThrow(/CHECK/);
-		expect(() => insert.run(' carol.122140003@student.itera.ac.id', 'Carol')).toThrow(/CHECK/);
-		expect(() => insert.run('carol@gmail.com', 'Carol')).toThrow(/CHECK/);
-		expect(() => insert.run('carol@student.itera.ac.id.evil.com', 'Carol')).toThrow(/CHECK/);
+	it('NIM DPT hanya angka 8–12 digit', () => {
+		const insert = db.prepare('INSERT INTO voters (nim, name) VALUES (?, ?)');
+		expect(() => insert.run('carol.122140003@student.itera.ac.id', 'Carol')).toThrow(/CHECK/);
+		expect(() => insert.run(' 122140003', 'Carol')).toThrow(/CHECK/);
+		expect(() => insert.run('12214000A', 'Carol')).toThrow(/CHECK/);
+		expect(() => insert.run('1221', 'Carol')).toThrow(/CHECK/);
+		insert.run('122140003', 'Carol');
+		expect(count(db, 'voters')).toBe(3);
 	});
 
 	it('audit log tidak bisa diubah atau dihapus', () => {
@@ -222,5 +224,36 @@ describe('kerahasiaan dan integritas data', () => {
 
 	it('konfigurasi pemilihan tidak bisa dihapus', () => {
 		expect(() => db.exec('DELETE FROM election_config')).toThrow(/election_config_immutable/);
+	});
+});
+
+describe('migrasi 0002 (DPT berbasis NIM)', () => {
+	const migration = (name: string) => readFileSync(join(process.cwd(), 'migrations', name), 'utf8');
+
+	function dbAt0001(): DatabaseSync {
+		const old = new DatabaseSync(':memory:');
+		old.exec('PRAGMA foreign_keys = ON;');
+		old.exec(migration('0001_init.sql'));
+		return old;
+	}
+
+	it('berjalan jika belum ada suara', () => {
+		const old = dbAt0001();
+		old.exec("INSERT INTO voters (email, name) VALUES ('a.122140001@student.itera.ac.id', 'A')");
+		old.exec(migration('0002_voters_by_nim.sql'));
+		const columns = (old.prepare('PRAGMA table_info(voters)').all() as { name: string }[]).map(
+			(c) => c.name
+		);
+		expect(columns).toEqual(['nim', 'name']);
+	});
+
+	it('menolak berjalan jika sudah ada suara', () => {
+		const old = dbAt0001();
+		old.exec(`INSERT INTO candidates (id, number, name) VALUES (1, 1, 'Satu')`);
+		old.exec("INSERT INTO voters (email, name) VALUES ('a.122140001@student.itera.ac.id', 'A')");
+		setSchedule(old, now() - 60, now() + 3600);
+		old.exec("INSERT INTO voted (email) VALUES ('a.122140001@student.itera.ac.id')");
+		expect(() => old.exec(migration('0002_voters_by_nim.sql'))).toThrow(/CHECK/);
+		expect(count(old, 'voted')).toBe(1);
 	});
 });

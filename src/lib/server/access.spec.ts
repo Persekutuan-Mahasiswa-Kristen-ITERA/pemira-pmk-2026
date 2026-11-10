@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canSignIn, isAdminEmail, isStudentEmail } from './access';
+import { canSignIn, isAdminEmail, isStudentEmail, nimFromEmail } from './access';
 
 describe('isStudentEmail', () => {
 	it('hanya menerima domain student.itera.ac.id persis', () => {
@@ -26,5 +26,22 @@ describe('admin', () => {
 		expect(canSignIn('martin.manullang@if.itera.ac.id', raw)).toBe(true);
 		expect(canSignIn('dosen.lain@if.itera.ac.id', raw)).toBe(false);
 		expect(canSignIn('budi.122140001@student.itera.ac.id', raw)).toBe(true);
+	});
+});
+
+describe('nimFromEmail', () => {
+	it('mengambil NIM dari email mahasiswa', () => {
+		expect(nimFromEmail('budi.122140001@student.itera.ac.id')).toBe('122140001');
+		expect(nimFromEmail('Budi.Santoso.122140001@Student.ITERA.ac.id')).toBe('122140001');
+		expect(nimFromEmail('122140001@student.itera.ac.id')).toBe('122140001');
+	});
+
+	it('menolak email tanpa NIM atau di luar domain mahasiswa', () => {
+		expect(nimFromEmail('martin.manullang@if.itera.ac.id')).toBeNull();
+		expect(nimFromEmail('budi.122140001@gmail.com')).toBeNull();
+		expect(nimFromEmail('budi.122140001@student.itera.ac.id.evil.com')).toBeNull();
+		expect(nimFromEmail('budi@student.itera.ac.id')).toBeNull();
+		expect(nimFromEmail('budi122140001@student.itera.ac.id')).toBeNull();
+		expect(nimFromEmail('budi.1221@student.itera.ac.id')).toBeNull();
 	});
 });
