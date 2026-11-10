@@ -15,15 +15,12 @@
 UPDATE election_config SET title = 'Pemilihan Ketua PMK ITERA 2027 (DEMO)' WHERE id = 1;
 
 INSERT INTO candidates (id, number, name, vision, mission) VALUES
-	(1, 1, 'Calon Satu',
+	(1, 1, 'Yudas Iskariot',
 		'PMK ITERA yang bertumbuh dalam firman dan hadir bagi kampus.',
 		'Memperkuat kelompok kecil; membuka ibadah bagi mahasiswa baru; pelayanan sosial tiap semester.'),
-	(2, 2, 'Calon Dua',
+	(2, 2, 'Simon Petrus',
 		'Persekutuan yang hangat, terbuka, dan saling menopang.',
-		'Pendampingan akademik antarangkatan; doa bersama mingguan; kolaborasi dengan persekutuan kampus lain.'),
-	(3, 3, 'Calon Tiga',
-		'Mahasiswa Kristen yang melayani lewat keahliannya.',
-		'Pelatihan kepemimpinan; pelayanan berbasis program studi; administrasi organisasi yang transparan.');
+		'Pendampingan akademik antarangkatan; doa bersama mingguan; kolaborasi dengan persekutuan kampus lain.');
 
 INSERT INTO voters (nim, name) VALUES
 	('121140001', 'Abigail Siregar'),
@@ -85,7 +82,6 @@ INSERT INTO audit_log (actor_email, action, detail) VALUES
 	('admin.satu@example.com', 'dpt.replace', '{"count":40,"source":"seed-demo.sql"}'),
 	('admin.satu@example.com', 'candidate.create', '{"number":1}'),
 	('admin.satu@example.com', 'candidate.create', '{"number":2}'),
-	('admin.satu@example.com', 'candidate.create', '{"number":3}'),
 	('admin.satu@example.com', 'schedule.set', '{"note":"buka 1 jam lalu, tutup 12 jam lagi"}');
 
 -- Jendela pemilihan: dibuka 1 jam lalu, ditutup 12 jam lagi (pakai "Tutup darurat" di admin
@@ -177,14 +173,14 @@ INSERT INTO ballots (code, candidate_id) VALUES
 	('75TG4-CRMC9', 1),
 	('BYHF1-YG9DQ', 1),
 	('E65KZ-V8GW8', 2),
-	('ESXRA-XQM7C', 3),
-	('F3X9A-XYC5D', 3),
+	('ESXRA-XQM7C', 2),
+	('F3X9A-XYC5D', 2),
 	('GJHC6-6EGT5', 2),
 	('GVHPF-T1CX8', 2),
 	('H45T4-ZED27', 2),
 	('J4EDX-1ARJW', 1),
-	('JA9SK-DGPCR', 3),
+	('JA9SK-DGPCR', 2),
 	('K5178-NW081', 1),
 	('NC6BY-98Z4R', 1),
 	('NCBJ6-DXCF4', 1),
-	('NK4GG-VEANP', 3);
+	('NK4GG-VEANP', 2);
