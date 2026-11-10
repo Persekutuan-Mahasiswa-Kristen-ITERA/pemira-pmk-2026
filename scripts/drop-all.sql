@@ -5,13 +5,8 @@ DROP TABLE IF EXISTS vote_passes;
 DROP TABLE IF EXISTS exception_codes;
 DROP TABLE IF EXISTS booth_codes;
 DROP TABLE IF EXISTS officers;
-<<<<<<< HEAD
 DROP TABLE IF EXISTS candidate_photos;
 DROP TABLE IF EXISTS admins;
-=======
-DROP TABLE IF EXISTS admins;
-DROP TABLE IF EXISTS candidate_photos;
->>>>>>> 1fb6837 (feat(results): add public audit verification)
 DROP TABLE IF EXISTS ballots;
 DROP TABLE IF EXISTS voted;
 DROP TABLE IF EXISTS audit_log;
