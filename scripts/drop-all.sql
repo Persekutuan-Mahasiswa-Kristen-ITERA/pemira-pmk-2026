@@ -1,12 +1,17 @@
 -- MENGHAPUS SELURUH DATA DAN SKEMA. Hanya untuk database STAGING / lokal
--- (dipakai oleh `pnpm db:reset:staging`). JANGAN dijalankan ke production.
--- Tabel dari 0004 (TPS) dan 0003 (admin, foto) lebih dulu karena merujuk voters/candidates.
+-- (dipakai oleh `pnpm db:reset:staging` dan `pnpm db:demo:local`). JANGAN dijalankan ke production.
+-- Tabel yang punya FOREIGN KEY dihapus lebih dulu karena merujuk voters/candidates.
 DROP TABLE IF EXISTS vote_passes;
 DROP TABLE IF EXISTS exception_codes;
 DROP TABLE IF EXISTS booth_codes;
 DROP TABLE IF EXISTS officers;
+<<<<<<< HEAD
 DROP TABLE IF EXISTS candidate_photos;
 DROP TABLE IF EXISTS admins;
+=======
+DROP TABLE IF EXISTS admins;
+DROP TABLE IF EXISTS candidate_photos;
+>>>>>>> 1fb6837 (feat(results): add public audit verification)
 DROP TABLE IF EXISTS ballots;
 DROP TABLE IF EXISTS voted;
 DROP TABLE IF EXISTS audit_log;

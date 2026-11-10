@@ -2,7 +2,7 @@ import { fail } from '@sveltejs/kit';
 import { auditStatement, describeDbError, requireAdmin } from '#lib/server/admin.js';
 import { getDb } from '#lib/server/db.js';
 import { getElectionStatus } from '#lib/server/election.js';
-import { getParticipation } from '#lib/server/results.js';
+import { getParticipation, isAuditPublic, setAuditPublicStatement } from '#lib/server/results.js';
 import { boothCodeStats, usedExceptionNims } from '#lib/server/tps.js';
 import { unixToWibInput, wibInputToUnix } from '#lib/time.js';
 import type { Actions, PageServerLoad } from './$types';
@@ -10,15 +10,17 @@ import type { Actions, PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ locals }) => {
 	requireAdmin(locals);
 	const db = getDb();
-	const [election, participation, boothCodes, exceptionNims] = await Promise.all([
+	const [election, participation, boothCodes, exceptionNims, auditPublic] = await Promise.all([
 		getElectionStatus(db),
 		getParticipation(db),
 		boothCodeStats(db),
-		usedExceptionNims(db)
+		usedExceptionNims(db),
+		isAuditPublic(db)
 	]);
 	return {
 		election,
 		participation,
+		auditPublic,
 		tps: { boothCodes, exceptionsUsed: exceptionNims.length },
 		opensInput: unixToWibInput(election.opensAt),
 		closesInput: unixToWibInput(election.closesAt)
@@ -81,5 +83,30 @@ export const actions: Actions = {
 			return fail(409, { error: describeDbError(err) ?? 'Gagal menutup pemungutan suara.' });
 		}
 		return { ok: 'Pemungutan suara ditutup.' };
+	},
+
+	/**
+	 * Buka/tutup audit suara publik: pencarian kode tanda terima dan unduhan CSV surat suara di
+	 * halaman Hasil. Perolehan suara tetap tampil setelah ditutup, terlepas dari flag ini.
+	 */
+	audit: async ({ locals, request }) => {
+		const admin = requireAdmin(locals);
+		const form = await request.formData();
+		const enabled = form.get('enabled') === '1';
+
+		const db = getDb();
+		try {
+			await db.batch([
+				setAuditPublicStatement(db, enabled),
+				auditStatement(db, admin, 'results.audit_public', { enabled })
+			]);
+		} catch (err) {
+			return fail(409, { error: describeDbError(err) ?? 'Gagal mengubah pengaturan audit suara.' });
+		}
+		return {
+			ok: enabled
+				? 'Audit suara dibuka: pencarian kode dan CSV surat suara tampil di halaman Hasil.'
+				: 'Audit suara ditutup: halaman Hasil hanya menampilkan perolehan suara.'
+		};
 	}
 };

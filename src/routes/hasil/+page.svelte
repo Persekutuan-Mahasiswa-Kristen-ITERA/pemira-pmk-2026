@@ -15,9 +15,10 @@
 
 	let codeInput = $state('');
 	let lookupCode = $derived(normalizeReceiptCode(codeInput));
+	let audit = $derived(results?.audit ?? null);
 	let found = $derived(
-		results && lookupCode.length === 11
-			? (results.ballots.find((b) => b.code === lookupCode) ?? null)
+		audit && lookupCode.length === 11
+			? (audit.ballots.find((b) => b.code === lookupCode) ?? null)
 			: undefined
 	);
 
@@ -102,70 +103,71 @@
 					</li>
 				{/each}
 			</ol>
-			<p class="check" class:bad={p.voted !== results.ballots.length}>
-				{#if p.voted === results.ballots.length}
+			<p class="check" class:bad={p.voted !== p.ballots}>
+				{#if p.voted === p.ballots}
 					<span class="check-icon" aria-hidden="true">✓</span>
-					Jumlah surat suara ({results.ballots.length}) sama dengan jumlah pemilih yang tercatat
-					sudah memilih ({p.voted}).
+					Jumlah surat suara ({p.ballots}) sama dengan jumlah pemilih yang tercatat sudah memilih ({p.voted}).
 				{:else}
 					<span class="check-icon" aria-hidden="true">!</span>
-					Jumlah surat suara ({results.ballots.length}) berbeda dengan jumlah pemilih yang tercatat
-					sudah memilih ({p.voted}).
+					Jumlah surat suara ({p.ballots}) berbeda dengan jumlah pemilih yang tercatat sudah memilih
+					({p.voted}).
 				{/if}
 			</p>
 		</section>
 
-		<div class="split">
-			<section class="lookup-card" aria-labelledby="periksa">
-				<h2 id="periksa">Periksa <em>suaramu</em></h2>
-				<p class="muted">
-					Tidak wajib. Ketik kode tanda terima yang kamu simpan jika ingin memastikan suaramu
-					tercatat, misalnya saat ada sengketa.
-				</p>
-				<label class="lookup">
-					<span>Kode tanda terima</span>
-					<input
-						bind:value={codeInput}
-						placeholder="XXXXX-XXXXX"
-						autocomplete="off"
-						spellcheck="false"
-						maxlength="16"
-					/>
-				</label>
-				{#if found}
-					<p class="msg msg-ok">
-						Kode <strong class="mono">{found.code}</strong> tercatat untuk calon
-						<strong>No. {found.number}</strong>.
+		{#if audit}
+			<div class="split">
+				<section class="lookup-card" aria-labelledby="periksa">
+					<h2 id="periksa">Periksa <em>suaramu</em></h2>
+					<p class="muted">
+						Tidak wajib. Ketik kode tanda terima yang kamu simpan jika ingin memastikan suaramu
+						tercatat, misalnya saat ada sengketa.
 					</p>
-				{:else if found === null}
-					<p class="msg msg-error">
-						<span>
-							Kode <strong class="mono">{lookupCode}</strong> tidak ditemukan. Periksa kembali penulisannya;
-							jika tetap tidak ada, laporkan ke panitia dan saksi.
-						</span>
-					</p>
-				{/if}
-			</section>
+					<label class="lookup">
+						<span>Kode tanda terima</span>
+						<input
+							bind:value={codeInput}
+							placeholder="XXXXX-XXXXX"
+							autocomplete="off"
+							spellcheck="false"
+							maxlength="16"
+						/>
+					</label>
+					{#if found}
+						<p class="msg msg-ok">
+							Kode <strong class="mono">{found.code}</strong> tercatat untuk calon
+							<strong>No. {found.number}</strong>.
+						</p>
+					{:else if found === null}
+						<p class="msg msg-error">
+							<span>
+								Kode <strong class="mono">{lookupCode}</strong> tidak ditemukan. Periksa kembali penulisannya;
+								jika tetap tidak ada, laporkan ke panitia dan saksi.
+							</span>
+						</p>
+					{/if}
+				</section>
 
-			<section class="audit" aria-labelledby="audit">
-				<h2 id="audit">Audit <em>mandiri</em></h2>
-				<p>
-					Semua {results.ballots.length} surat suara (kode → nomor calon) dapat diunduh dan dihitung ulang
-					oleh siapa saja.
-				</p>
-				<a class="button button-gold" href={resolve('/hasil/surat-suara.csv')} download>
-					Unduh daftar surat suara (CSV)
-				</a>
-				<p class="hash-label">SHA-256 berkas</p>
-				<p class="hash mono">{results.sha256}</p>
-				<p class="audit-help">
-					Periksa keaslian berkas dengan <code
-						>shasum -a 256 surat-suara-pemira-pmk-itera-2027.csv</code
-					>
-					(macOS/Linux) atau <code>certutil -hashfile &lt;berkas&gt; SHA256</code> (Windows).
-				</p>
-			</section>
-		</div>
+				<section class="audit" aria-labelledby="audit">
+					<h2 id="audit">Audit <em>mandiri</em></h2>
+					<p>
+						Semua {audit.ballots.length} surat suara (kode → nomor calon) dapat diunduh dan dihitung ulang
+						oleh siapa saja.
+					</p>
+					<a class="button button-gold" href={resolve('/hasil/surat-suara.csv')} download>
+						Unduh daftar surat suara (CSV)
+					</a>
+					<p class="hash-label">SHA-256 berkas</p>
+					<p class="hash mono">{audit.sha256}</p>
+					<p class="audit-help">
+						Periksa keaslian berkas dengan <code
+							>shasum -a 256 surat-suara-pemira-pmk-itera-2027.csv</code
+						>
+						(macOS/Linux) atau <code>certutil -hashfile &lt;berkas&gt; SHA256</code> (Windows).
+					</p>
+				</section>
+			</div>
+		{/if}
 
 		<section class="block exceptions" aria-labelledby="pengecualian">
 			<h2 id="pengecualian">Masuk tanpa <em>Google</em></h2>

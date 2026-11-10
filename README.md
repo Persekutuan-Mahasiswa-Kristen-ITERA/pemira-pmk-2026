@@ -89,7 +89,8 @@ Semua tindakan admin tercatat di audit log yang tidak bisa diubah atau dihapus.
 
 ## 🔍 Verifikasi hasil
 
-Setelah pemungutan suara ditutup, halaman `/hasil` menampilkan perolehan suara, pencarian kode tanda terima,
+Setelah pemungutan suara ditutup, halaman `/hasil` menampilkan perolehan suara. Begitu panitia membuka
+**audit suara** dari panel admin (satu tombol, tercatat di audit log), halaman itu juga menampilkan pencarian kode tanda terima
 dan berkas CSV berisi semua surat suara (`kode,nomor_calon`) beserta hash SHA-256-nya. Pemilih tidak wajib
 memeriksa apa pun; langkah berikut disediakan untuk saat ada sengketa hasil. Siapa pun bisa:
 
@@ -146,7 +147,14 @@ Prasyarat: Node.js 22.13+ (untuk `node:sqlite` di tes) dan [pnpm](https://pnpm.i
 ```sh
 pnpm install
 cp .dev.vars.example .dev.vars   # secret lokal, tidak di-commit
-pnpm dev                         # pilih mode, lalu buka http://localhost:5173
+# Edit .dev.vars: isi SUPER_ADMIN_EMAILS dengan email Google-mu sendiri supaya bisa membuka /admin.
+pnpm db:reset:local              # buat database lokal + jalankan migrasi
+pnpm db:seed:local               # opsional: data contoh (fiktif) dan buka jendela pemilihan 7 hari
+pnpm db:seed:panitia:local       # opsional: admin, petugas TPS, dan jejak audit fiktif (lihat scripts/seed-dev-panitia.sql)
+pnpm db:demo:local               # ATAU: simulasi lengkap (DPT 120, 87 suara, pemilihan sudah ditutup, /hasil terisi)
+pnpm dev                         # http://localhost:5173
+
+# Alternatif mode lama yang dikelola skrip dev: pnpm dev local / demo / staging.
 ```
 
 `pnpm dev` (atau `npm run dev`) menanyakan mode:
@@ -172,19 +180,21 @@ supaya bisa membuka `/admin` lewat **"Masuk dengan akun panitia"**.
 <details>
 <summary><b>Perintah</b></summary>
 
-| Perintah                | Fungsi                                                             |
-| ----------------------- | ------------------------------------------------------------------ |
-| `pnpm dev`              | Server pengembangan (pilih Live remote / Dummy local)              |
-| `pnpm test`             | Tes unit, termasuk tes aturan database                             |
-| `pnpm check`            | Pemeriksaan tipe                                                   |
-| `pnpm lint`             | Prettier + ESLint                                                  |
-| `pnpm build`            | Build untuk Cloudflare Pages                                       |
-| `pnpm preview`          | Jalankan hasil build secara lokal dengan runtime Cloudflare        |
-| `pnpm gen`              | Buat ulang tipe Cloudflare setelah mengubah `wrangler.jsonc`       |
-| `pnpm db:reset:local`   | Hapus dan buat ulang database D1 lokal                             |
-| `pnpm db:seed:local`    | Isi database lokal dengan data contoh                              |
-| `pnpm db:seed:demo`     | Isi database lokal dengan data dummy mode demo                     |
-| `pnpm db:reset:staging` | Kosongkan database **staging** (untuk simulasi). Bukan production. |
+| Perintah                     | Fungsi                                                                    |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| `pnpm dev`                   | Server pengembangan (pilih mode)                                          |
+| `pnpm test`                  | Tes unit, termasuk tes aturan database                                    |
+| `pnpm check`                 | Pemeriksaan tipe                                                          |
+| `pnpm lint`                  | Prettier + ESLint                                                         |
+| `pnpm build`                 | Build untuk Cloudflare Pages                                              |
+| `pnpm preview`               | Jalankan hasil build secara lokal dengan runtime Cloudflare               |
+| `pnpm gen`                   | Buat ulang tipe Cloudflare setelah mengubah `wrangler.jsonc`              |
+| `pnpm db:reset:local`        | Hapus dan buat ulang database D1 lokal                                    |
+| `pnpm db:seed:local`         | Isi database lokal dengan data contoh                                     |
+| `pnpm db:seed:panitia:local` | Isi admin, petugas TPS, dan audit log fiktif (lokal)                      |
+| `pnpm db:demo:local`         | Kosongkan DB lokal lalu isi simulasi pemilihan lengkap yang sudah ditutup |
+| `pnpm db:reset:staging`      | Kosongkan database **staging** (untuk simulasi). Bukan production.        |
+| `pnpm db:seed:demo`          | Isi database lokal dengan data dummy mode demo                            |
 
 </details>
 

@@ -2,7 +2,14 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { DatabaseSync } from 'node:sqlite';
 import { asD1, freshDb, grantPass } from './testing/sqlite';
 import { castVote } from './vote';
-import { ballotsCsv, getParticipation, getTally, publishedBallots } from './results';
+import {
+	ballotsCsv,
+	getParticipation,
+	getTally,
+	isAuditPublic,
+	publishedBallots,
+	setAuditPublicStatement
+} from './results';
 
 let raw: DatabaseSync;
 let db: D1Database;
@@ -46,5 +53,26 @@ describe('hasil', () => {
 
 	it('CSV kosong tetap punya baris judul', () => {
 		expect(ballotsCsv([])).toBe('kode,nomor_calon\n');
+	});
+});
+
+describe('audit suara publik', () => {
+	it('tertutup secara bawaan', async () => {
+		expect(await isAuditPublic(db)).toBe(false);
+	});
+
+	it('bisa dibuka dan ditutup lagi oleh admin, termasuk setelah pemilihan ditutup', async () => {
+		raw.exec('UPDATE election_config SET closes_at = unixepoch() WHERE id = 1');
+		await setAuditPublicStatement(db, true).run();
+		expect(await isAuditPublic(db)).toBe(true);
+		await setAuditPublicStatement(db, false).run();
+		expect(await isAuditPublic(db)).toBe(false);
+	});
+
+	it('tidak mengubah jadwal atau suara', async () => {
+		const before = raw.prepare('SELECT opens_at, closes_at FROM election_config').get();
+		await setAuditPublicStatement(db, true).run();
+		expect(raw.prepare('SELECT opens_at, closes_at FROM election_config').get()).toEqual(before);
+		expect(await getParticipation(db)).toEqual({ eligible: 4, voted: 3, ballots: 3 });
 	});
 });

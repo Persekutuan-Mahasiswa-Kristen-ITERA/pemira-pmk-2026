@@ -366,3 +366,24 @@ describe('migrasi 0004 (TPS)', () => {
 		expect(() => old.exec(`INSERT INTO voted (nim) VALUES ('${BOB}')`)).toThrow(/no_pass/);
 	});
 });
+
+describe('migrasi 0005 (audit suara publik)', () => {
+	it('bawaan tertutup dan hanya menerima 0 atau 1', () => {
+		expect(db.prepare('SELECT audit_public FROM election_config').get()).toEqual({
+			audit_public: 0
+		});
+		expect(() => db.prepare('UPDATE election_config SET audit_public = 2').run()).toThrow(/CHECK/);
+	});
+
+	it('boleh diubah setelah pemilihan dibuka dan ditutup tanpa menyentuh jadwal', () => {
+		setSchedule(db, now() - 7200, now() - 60);
+		db.prepare('UPDATE election_config SET audit_public = 1').run();
+		expect(db.prepare('SELECT audit_public FROM election_config').get()).toEqual({
+			audit_public: 1
+		});
+		// Jadwal tetap terkunci.
+		expect(() => db.prepare('UPDATE election_config SET closes_at = ?').run(now() + 3600)).toThrow(
+			/schedule_locked/
+		);
+	});
+});

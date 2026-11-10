@@ -126,6 +126,33 @@
 	{/if}
 </form>
 
+<h2>Audit suara publik</h2>
+<form method="POST" action="?/audit" use:enhance class="panel audit-panel">
+	<input type="hidden" name="enabled" value={data.auditPublic ? '0' : '1'} />
+	<div class="audit-row">
+		<p class="audit-state">
+			<span class="audit-dot" class:on={data.auditPublic} aria-hidden="true"></span>
+			{data.auditPublic ? 'Dibuka' : 'Ditutup'}
+		</p>
+		<button
+			class="button"
+			class:button-ghost={data.auditPublic}
+			type="submit"
+			role="switch"
+			aria-checked={data.auditPublic}
+		>
+			{data.auditPublic ? 'Tutup audit suara' : 'Buka audit suara'}
+		</button>
+	</div>
+	<p class="hint">
+		Mengatur bagian <strong>Periksa suaramu</strong> dan <strong>Audit mandiri</strong> (pencarian
+		kode tanda terima, unduhan CSV surat suara, SHA-256) di halaman Hasil. Perolehan suara tetap
+		tampil begitu pemungutan suara ditutup; bagian audit hanya tampil jika dibuka di sini
+		{#if election.phase !== 'closed'}dan baru berlaku setelah pemungutan suara ditutup{/if}.
+		Perubahan tercatat di audit log.
+	</p>
+</form>
+
 {#if election.phase === 'open'}
 	<h2>Tutup darurat</h2>
 	<form method="POST" action="?/close" use:enhance class="panel danger">
@@ -146,6 +173,33 @@
 {/if}
 
 <style>
+	.audit-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16px;
+		flex-wrap: wrap;
+	}
+
+	.audit-state {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		margin: 0;
+		font-weight: 600;
+	}
+
+	.audit-dot {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		background: var(--line);
+	}
+
+	.audit-dot.on {
+		background: var(--ok-line);
+	}
+
 	.tps {
 		display: grid;
 		gap: 14px;

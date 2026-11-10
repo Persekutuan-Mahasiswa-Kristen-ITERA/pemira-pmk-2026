@@ -130,7 +130,9 @@
 		margin-top: 10px;
 	}
 
-	.approved {
+	/* `div.panel.approved` supaya menang dari `.content :global(.panel)` di layout admin;
+	   tanpa itu latar panel tetap krem dan kode (krem terang) tidak terbaca. */
+	div.panel.approved {
 		display: grid;
 		gap: 8px;
 		background: var(--brown-dark);

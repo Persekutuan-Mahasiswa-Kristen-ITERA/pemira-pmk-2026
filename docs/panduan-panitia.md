@@ -131,7 +131,7 @@ lainnya, foto terkunci begitu pemilihan dibuka, jadi pastikan sudah final sebelu
    - perolehan suara setiap calon;
    - tanda ✓ bahwa jumlah surat suara sama dengan jumlah pemilih yang sudah memilih;
    - daftar NIM yang masuk dengan kode pengecualian (jika ada).
-3. Unduh **daftar surat suara (CSV)** dan catat **SHA-256** yang tampil. Lampirkan keduanya pada berita
+3. Di **Admin → Ringkasan**, tekan **Buka audit suara**. Lalu unduh **daftar surat suara (CSV)** dan catat **SHA-256** yang tampil. Lampirkan keduanya pada berita
    acara.
 4. Umumkan hasil, tautan halaman Hasil, dan SHA-256. Buka **masa sanggah hasil**: pemilih dapat memeriksa
    kode tanda terimanya di halaman Hasil.

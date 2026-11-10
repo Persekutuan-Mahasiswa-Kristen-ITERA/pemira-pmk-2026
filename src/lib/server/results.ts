@@ -60,3 +60,21 @@ export async function publishedBallots(db: D1Database) {
 	const csv = ballotsCsv(ballots);
 	return { ballots, csv, sha256: await sha256Hex(csv) };
 }
+
+/**
+ * Apakah bagian audit (pencarian kode tanda terima dan CSV surat suara) dibuka ke publik.
+ * Diaktifkan admin dari panel Admin; hanya berpengaruh setelah pemungutan suara ditutup.
+ */
+export async function isAuditPublic(db: D1Database): Promise<boolean> {
+	const row = await db
+		.prepare('SELECT audit_public FROM election_config WHERE id = 1')
+		.first<{ audit_public: number }>();
+	return row?.audit_public === 1;
+}
+
+/** Pernyataan untuk mengubah flag audit publik; dijalankan dalam satu batch dengan audit log. */
+export function setAuditPublicStatement(db: D1Database, enabled: boolean): D1PreparedStatement {
+	return db
+		.prepare('UPDATE election_config SET audit_public = ? WHERE id = 1')
+		.bind(enabled ? 1 : 0);
+}

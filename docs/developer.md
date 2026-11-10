@@ -57,29 +57,29 @@ Browser ──► Cloudflare Pages (SvelteKit, server-side) ──► Cloudflare
 
 ## Peta kode
 
-| Lokasi                         | Isi                                                                                                                          |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| `migrations/`                  | Skema dan **aturan pemilihan** (trigger): 0001 dasar, 0002 DPT berbasis NIM, 0003 admin dan foto, 0004 TPS                   |
-| `src/lib/server/vote.ts`       | Status pemilih dan pencatatan suara (`castVote`)                                                                             |
-| `src/lib/server/tps.ts`        | Kode TPS, kode pengecualian, izin memilih, penghitung rekonsiliasi                                                           |
-| `src/lib/server/auth.ts`       | Verifikasi Firebase ID token                                                                                                 |
-| `src/lib/server/access.ts`     | Aturan domain email, NIM dari email, dan admin                                                                               |
-| `src/lib/server/admin.ts`      | `requireAdmin`, `requireSuperAdmin`, pencatatan audit log                                                                    |
-| `src/lib/server/admins.ts`     | Peran admin (super admin dari secret, admin undangan dari tabel)                                                             |
-| `src/lib/server/photos.ts`     | Validasi foto calon                                                                                                          |
-| `src/lib/server/candidates.ts` | URL foto per calon                                                                                                           |
-| `src/lib/resize-image.ts`      | Memperkecil foto di browser sebelum diunggah                                                                                 |
-| `src/lib/components/`          | Komponen tampilan bersama (lihat [Tampilan](#tampilan))                                                                      |
-| `src/routes/+layout.*`         | Header, footer, pita "uji coba", dan label database                                                                          |
-| `src/routes/foto-calon/`       | Foto calon (publik, cache panjang lewat URL berversi)                                                                        |
-| `src/lib/server/results.ts`    | Rekap, daftar surat suara, CSV + SHA-256                                                                                     |
-| `src/lib/server/dpt.ts`        | Parser CSV DPT dan sidik jari DPT                                                                                            |
-| `src/lib/server/testing/`      | SQLite di memori (`node:sqlite`) dengan shim D1 untuk tes                                                                    |
-| `src/routes/pilih/`            | Kode TPS, surat suara (5 menit), kode tanda terima sekali tampil, keluar otomatis 20 detik                                   |
-| `src/routes/petugas/`          | Halaman Petugas TPS: buat kode TPS, cek DPT, penghitung kode                                                                 |
-| `src/routes/hasil/`            | Hasil, pencarian kode, unduhan CSV (404 sebelum pemungutan suara ditutup)                                                    |
-| `src/routes/admin/`            | Ringkasan & jadwal + rekonsiliasi TPS, tutup darurat, calon + foto, DPT, kode pengecualian, audit log, panitia (super admin) |
-| `.github/workflows/`           | CI (lint, check, test, build) dan deploy                                                                                     |
+| Lokasi                         | Isi                                                                                                                           |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `migrations/`                  | Skema dan **aturan pemilihan** (trigger): 0001 dasar, 0002 DPT berbasis NIM, 0003 admin dan foto, 0004 TPS, 0005 audit publik |
+| `src/lib/server/vote.ts`       | Status pemilih dan pencatatan suara (`castVote`)                                                                              |
+| `src/lib/server/tps.ts`        | Kode TPS, kode pengecualian, izin memilih, penghitung rekonsiliasi                                                            |
+| `src/lib/server/auth.ts`       | Verifikasi Firebase ID token                                                                                                  |
+| `src/lib/server/access.ts`     | Aturan domain email, NIM dari email, dan admin                                                                                |
+| `src/lib/server/admin.ts`      | `requireAdmin`, `requireSuperAdmin`, pencatatan audit log                                                                     |
+| `src/lib/server/admins.ts`     | Peran admin (super admin dari secret, admin undangan dari tabel)                                                              |
+| `src/lib/server/photos.ts`     | Validasi foto calon                                                                                                           |
+| `src/lib/server/candidates.ts` | URL foto per calon                                                                                                            |
+| `src/lib/resize-image.ts`      | Memperkecil foto di browser sebelum diunggah                                                                                  |
+| `src/lib/components/`          | Komponen tampilan bersama (lihat [Tampilan](#tampilan))                                                                       |
+| `src/routes/+layout.*`         | Header, footer, pita "uji coba", dan label database                                                                           |
+| `src/routes/foto-calon/`       | Foto calon (publik, cache panjang lewat URL berversi)                                                                         |
+| `src/lib/server/results.ts`    | Rekap, daftar surat suara, CSV + SHA-256                                                                                      |
+| `src/lib/server/dpt.ts`        | Parser CSV DPT dan sidik jari DPT                                                                                             |
+| `src/lib/server/testing/`      | SQLite di memori (`node:sqlite`) dengan shim D1 untuk tes                                                                     |
+| `src/routes/pilih/`            | Kode TPS, surat suara (5 menit), kode tanda terima sekali tampil, keluar otomatis 20 detik                                    |
+| `src/routes/petugas/`          | Halaman Petugas TPS: buat kode TPS, cek DPT, penghitung kode                                                                  |
+| `src/routes/hasil/`            | Hasil; pencarian kode dan unduhan CSV hanya bila ditutup DAN admin membuka audit suara (`audit_public`), selain itu 404       |
+| `src/routes/admin/`            | Ringkasan & jadwal + rekonsiliasi TPS, tutup darurat, calon + foto, DPT, kode pengecualian, audit log, panitia (super admin)  |
+| `.github/workflows/`           | CI (lint, check, test, build) dan deploy                                                                                      |
 
 ## Aturan yang tidak boleh dilanggar
 

@@ -1,7 +1,12 @@
 import { getDb } from '#lib/server/db.js';
 import { candidatePhotos } from '#lib/server/candidates.js';
 import { getElectionStatus } from '#lib/server/election.js';
-import { getParticipation, getTally, publishedBallots } from '#lib/server/results.js';
+import {
+	getParticipation,
+	getTally,
+	isAuditPublic,
+	publishedBallots
+} from '#lib/server/results.js';
 import { usedExceptionNims } from '#lib/server/tps.js';
 import type { PageServerLoad } from './$types';
 
@@ -15,9 +20,12 @@ export const load: PageServerLoad = async () => {
 	// Hasil dan daftar surat suara hanya dibuka setelah pemungutan suara ditutup.
 	if (election.phase !== 'closed') return { election, participation, results: null };
 
+	// Pencarian kode dan daftar surat suara (CSV + SHA-256) hanya dikirim bila admin sudah
+	// membuka audit suara ke publik; sebelum itu, kode tidak pernah meninggalkan server.
+	const auditPublic = await isAuditPublic(db);
 	const [tally, published, photos, ids, exceptionNims] = await Promise.all([
 		getTally(db),
-		publishedBallots(db),
+		auditPublic ? publishedBallots(db) : null,
 		candidatePhotos(db),
 		db
 			.prepare('SELECT id, number FROM candidates')
@@ -34,8 +42,7 @@ export const load: PageServerLoad = async () => {
 		participation,
 		results: {
 			tally,
-			ballots: published.ballots,
-			sha256: published.sha256,
+			audit: published ? { ballots: published.ballots, sha256: published.sha256 } : null,
 			photoByNumber,
 			exceptionNims
 		}
