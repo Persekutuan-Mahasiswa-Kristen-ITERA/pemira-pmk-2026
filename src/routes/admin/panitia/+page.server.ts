@@ -1,16 +1,16 @@
-import { env } from 'cloudflare:workers';
 import { fail } from '@sveltejs/kit';
 import { isSuperAdminEmail, isValidEmail, normalizeEmail } from '#lib/server/access.js';
 import { auditStatement, describeDbError, requireSuperAdmin } from '#lib/server/admin.js';
 import { listAdmins, listOfficers } from '#lib/server/admins.js';
 import { getDb } from '#lib/server/db.js';
+import { superAdminEmails } from '#lib/server/demo.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	requireSuperAdmin(locals);
 	const db = getDb();
 	const [admins, officers] = await Promise.all([
-		listAdmins(db, env.SUPER_ADMIN_EMAILS),
+		listAdmins(db, superAdminEmails()),
 		listOfficers(db)
 	]);
 	return { admins, officers };
@@ -22,7 +22,7 @@ export const actions: Actions = {
 		const email = normalizeEmail(String((await request.formData()).get('email') ?? ''));
 
 		if (!isValidEmail(email)) return fail(400, { error: 'Alamat email tidak valid.' });
-		if (isSuperAdminEmail(email, env.SUPER_ADMIN_EMAILS)) {
+		if (isSuperAdminEmail(email, superAdminEmails())) {
 			return fail(400, { error: `${email} sudah super admin.` });
 		}
 

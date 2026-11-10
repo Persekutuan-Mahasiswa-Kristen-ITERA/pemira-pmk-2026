@@ -28,7 +28,10 @@
 					"binding": "DB",
 					"database_name": "pemira-db-staging",
 					"database_id": "5a2eeacc-5ce5-46e3-9c9b-cf18876c7336",
-					"migrations_dir": "migrations"
+					"migrations_dir": "migrations",
+					// Hanya untuk `pnpm dev` mode "live remote": server lokal memakai database
+					// staging di Cloudflare (perlu `wrangler login`). Tidak memengaruhi deploy.
+					"remote": true
 				}
 			]
 		}

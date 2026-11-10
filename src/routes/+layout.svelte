@@ -38,6 +38,17 @@
 						resmi.
 					</p>
 					<a href={PRODUCTION_URL} rel="external">Ke situs resmi →</a>
+				{:else if data.demo}
+					<p>
+						<strong>Mode demo.</strong> Data dummy di komputer ini{#if data.userEmail}; masuk
+							sebagai
+							<strong>{data.userEmail}</strong>{:else}; masuk tanpa Google{/if}.
+					</p>
+					{#if data.userEmail}
+						<form method="POST" action={resolve('/keluar')}>
+							<button type="submit">Ganti pengguna →</button>
+						</form>
+					{/if}
 				{:else}
 					<p><strong>Pengembangan lokal.</strong> Memakai database lokal di komputer ini.</p>
 				{/if}
@@ -331,13 +342,21 @@
 		background: rgb(247 243 234 / 0.85);
 	}
 
-	.env-inner a {
+	.env-inner a,
+	.env-inner button {
 		padding: 1px 8px;
 		border-radius: 4px;
 		background: var(--ink);
 		font-weight: 800;
 		color: var(--paper-light);
 		text-decoration: none;
+	}
+
+	.env-inner button {
+		border: 0;
+		font: inherit;
+		font-weight: 800;
+		cursor: pointer;
 	}
 
 	.env-line {

@@ -19,32 +19,53 @@ function buildCommit(): string {
 	}
 }
 
-export default defineConfig({
-	define: {
-		__APP_COMMIT__: JSON.stringify(buildCommit())
-	},
-	plugins: [
-		sveltekit({
-			compilerOptions: {
-				// Force runes mode for the project, except for libraries. Can be removed in svelte 6.
-				runes: ({ filename }) =>
-					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
-			},
-			adapter: adapter()
-		})
-	],
-	test: {
-		expect: { requireAssertions: true },
-		projects: [
-			{
-				extends: './vite.config.ts',
-				test: {
-					name: 'server',
-					environment: 'node',
-					include: ['src/**/*.{test,spec}.{js,ts}'],
-					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}']
+/**
+ * Mode `pnpm dev` (dipilih lewat scripts/dev.mjs):
+ * - `demo`: database lokal berisi data dummy + login impersonate (tanpa Google).
+ * - `staging`: database staging di Cloudflare (binding `remote: true` di env `preview`) + login Google.
+ * - `local`: database lokal + login Google.
+ * Build selalu `local`, dan semua kode mode demo juga dijaga `dev` dari `$app/env`.
+ */
+type DevMode = 'demo' | 'staging' | 'local';
+
+function devMode(command: string): DevMode {
+	const mode = process.env.PEMIRA_DEV_MODE;
+	if (command !== 'serve') return 'local';
+	return mode === 'demo' || mode === 'staging' ? mode : 'local';
+}
+
+export default defineConfig(({ command }) => {
+	const mode = devMode(command);
+	return {
+		define: {
+			__APP_COMMIT__: JSON.stringify(buildCommit()),
+			__DEV_MODE__: JSON.stringify(mode)
+		},
+		plugins: [
+			sveltekit({
+				compilerOptions: {
+					// Force runes mode for the project, except for libraries. Can be removed in svelte 6.
+					runes: ({ filename }) =>
+						filename.split(/[/\\]/).includes('node_modules') ? undefined : true
+				},
+				adapter: adapter(
+					mode === 'staging' ? { platformProxy: { environment: 'preview' } } : undefined
+				)
+			})
+		],
+		test: {
+			expect: { requireAssertions: true },
+			projects: [
+				{
+					extends: './vite.config.ts',
+					test: {
+						name: 'server',
+						environment: 'node',
+						include: ['src/**/*.{test,spec}.{js,ts}'],
+						exclude: ['src/**/*.svelte.{test,spec}.{js,ts}']
+					}
 				}
-			}
-		]
-	}
+			]
+		}
+	};
 });

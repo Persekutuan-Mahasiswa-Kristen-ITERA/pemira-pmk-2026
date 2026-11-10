@@ -146,15 +146,24 @@ Prasyarat: Node.js 22.13+ (untuk `node:sqlite` di tes) dan [pnpm](https://pnpm.i
 ```sh
 pnpm install
 cp .dev.vars.example .dev.vars   # secret lokal, tidak di-commit
-# Edit .dev.vars: isi SUPER_ADMIN_EMAILS dengan email Google-mu sendiri supaya bisa membuka /admin.
-pnpm db:reset:local              # buat database lokal + jalankan migrasi
-pnpm db:seed:local               # opsional: data contoh (fiktif) dan buka jendela pemilihan 7 hari
-pnpm dev                         # http://localhost:5173
+pnpm dev                         # pilih mode, lalu buka http://localhost:5173
 ```
 
-Login Google berjalan di `localhost` tanpa akses ke Cloudflare atau Firebase. Masuk lewat **"Masuk dengan
-akun panitia"** untuk membuka panel admin. Untuk mencoba memilih, tambahkan NIM akun mahasiswamu ke DPT lokal
-(lihat `scripts/seed-dev.sql`).
+`pnpm dev` (atau `npm run dev`) menanyakan mode:
+
+| Mode            | Database                                        | Login                                          |
+| --------------- | ----------------------------------------------- | ---------------------------------------------- |
+| **Live remote** | `pemira-db-staging` di Cloudflare               | Google asli (perlu `pnpm wrangler login`)      |
+| **Dummy local** | Lokal, diisi ulang dari `scripts/seed-demo.sql` | Pilih pengguna dummy dari daftar, tanpa Google |
+
+Mode bisa langsung dipilih: `pnpm dev staging`, `pnpm dev demo`, atau `pnpm dev local` (database lokal apa
+adanya + login Google, seperti `pnpm db:reset:local && pnpm db:seed:local && pnpm dev local`). Mode demo cocok
+untuk presentasi dan simulasi: ada super admin, dua admin, tiga Petugas TPS, 40 pemilih (18 sudah memilih),
+dan akun untuk mencoba penolakan. Login tanpa Google **hanya ada di server pengembangan**: saat build,
+`DEMO_MODE` selalu `false` (lihat `src/lib/server/demo.ts`).
+
+Untuk login Google di mode lokal/live remote, isi `SUPER_ADMIN_EMAILS` di `.dev.vars` dengan email Google-mu
+supaya bisa membuka `/admin` lewat **"Masuk dengan akun panitia"**.
 
 </details>
 
@@ -163,7 +172,7 @@ akun panitia"** untuk membuka panel admin. Untuk mencoba memilih, tambahkan NIM 
 
 | Perintah                | Fungsi                                                             |
 | ----------------------- | ------------------------------------------------------------------ |
-| `pnpm dev`              | Server pengembangan                                                |
+| `pnpm dev`              | Server pengembangan (pilih Live remote / Dummy local)              |
 | `pnpm test`             | Tes unit, termasuk tes aturan database                             |
 | `pnpm check`            | Pemeriksaan tipe                                                   |
 | `pnpm lint`             | Prettier + ESLint                                                  |
@@ -172,6 +181,7 @@ akun panitia"** untuk membuka panel admin. Untuk mencoba memilih, tambahkan NIM 
 | `pnpm gen`              | Buat ulang tipe Cloudflare setelah mengubah `wrangler.jsonc`       |
 | `pnpm db:reset:local`   | Hapus dan buat ulang database D1 lokal                             |
 | `pnpm db:seed:local`    | Isi database lokal dengan data contoh                              |
+| `pnpm db:seed:demo`     | Isi database lokal dengan data dummy mode demo                     |
 | `pnpm db:reset:staging` | Kosongkan database **staging** (untuk simulasi). Bukan production. |
 
 </details>
@@ -181,7 +191,8 @@ akun panitia"** untuk membuka panel admin. Untuk mencoba memilih, tambahkan NIM 
 
 ```
 migrations/          Skema D1 + aturan (trigger) pemilihan, satu berkas per perubahan
-scripts/seed-dev.sql Data contoh untuk pengembangan lokal
+scripts/seed-*.sql   Data contoh (dev) dan data dummy mode demo (demo)
+scripts/dev.mjs      Menu `pnpm dev`: Live remote (staging) atau Dummy local
 src/app.css          Token desain (palet, tipografi) dan gaya global
 src/lib/components/  Komponen tampilan: surat suara, stempel, hitung mundur, guilloche
 src/lib/server/      Kode yang hanya berjalan di server (akses database, logika pemilihan)

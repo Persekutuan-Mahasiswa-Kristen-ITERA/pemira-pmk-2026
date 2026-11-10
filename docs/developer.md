@@ -132,10 +132,16 @@ Tampilan memakai motif **surat suara kertas**. Pertahankan arah ini saat menamba
 
 | Lingkungan | Cara deploy                                      | Database (D1)        | Alamat                                       |
 | ---------- | ------------------------------------------------ | -------------------- | -------------------------------------------- |
-| Lokal      | `pnpm dev`                                       | D1 lokal (Miniflare) | `http://localhost:5173`                      |
+| Lokal      | `pnpm dev demo` / `pnpm dev local`               | D1 lokal (Miniflare) | `http://localhost:5173`                      |
+| Dev remote | `pnpm dev staging` (server lokal)                | `pemira-db-staging`  | `http://localhost:5173`                      |
 | Staging    | workflow _Deploy_ manual / `pnpm deploy:staging` | `pemira-db-staging`  | `https://staging.pemira-pmk-itera.pages.dev` |
 | Production | push tag `v*`                                    | `pemira-db`          | `https://pemira.pmkitera.web.id`             |
 
+- `pnpm dev staging` memakai binding `remote: true` di `env.preview` (`wrangler.jsonc`), jadi server lokal
+  membaca dan menulis database staging di Cloudflare. Production tidak pernah dipakai dari server lokal.
+- **Mode demo** (`pnpm dev demo`): `src/lib/server/demo.ts` mengaktifkan login impersonate dan super admin
+  `ketua.panitia@example.com` hanya jika `dev` dan `__DEV_MODE__ === 'demo'` (diatur `vite.config.ts` dari
+  `PEMIRA_DEV_MODE`, selalu `'local'` saat build). Jangan memakai saklar lain untuk fitur demo.
 - Di Cloudflare Pages, branch `main` adalah production; semua branch lain memakai konfigurasi
   `env.preview` di `wrangler.jsonc` (database staging).
 - Variabel `APP_ENV` (`production`/`staging`, di `wrangler.jsonc` pada blok yang sama dengan database-nya)

@@ -1,8 +1,9 @@
-import { env } from 'cloudflare:workers';
 import type { Handle } from '@sveltejs/kit/hooks';
 import { getStaffRoles } from '#lib/server/admins.js';
 import { SESSION_COOKIE, verifyIdToken } from '#lib/server/auth.js';
 import { getDb } from '#lib/server/db.js';
+import { DEMO_MODE, superAdminEmails } from '#lib/server/demo.js';
+import { DEMO_COOKIE } from '#lib/server/demo-users.js';
 import { isFirebaseProxyPath, proxyFirebaseAuth } from '#lib/server/firebase-proxy.js';
 import { getPass, PASS_COOKIE } from '#lib/server/tps.js';
 
@@ -25,9 +26,16 @@ export const handle: Handle = async ({ event, resolve }) => {
 			event.cookies.delete(SESSION_COOKIE, { path: '/' });
 		}
 	}
+	if (!event.locals.user && DEMO_MODE) {
+		// Mode demo (hanya `pnpm dev` → "Dummy local"): login impersonate tanpa Google.
+		const email = event.cookies.get(DEMO_COOKIE);
+		if (email) {
+			event.locals.user = { email, name: null, expiresAt: Math.floor(Date.now() / 1000) + 3600 };
+		}
+	}
 	if (event.locals.user) {
 		// Peran dihitung ulang setiap request: admin yang dicabut langsung kehilangan akses.
-		const roles = await getStaffRoles(getDb(), event.locals.user.email, env.SUPER_ADMIN_EMAILS);
+		const roles = await getStaffRoles(getDb(), event.locals.user.email, superAdminEmails());
 		event.locals.role = roles.role;
 		event.locals.officer = roles.officer;
 	}

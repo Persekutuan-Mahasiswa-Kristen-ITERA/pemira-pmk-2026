@@ -8,6 +8,8 @@ import type { VotePass } from '#lib/server/tps.js';
 declare global {
 	/** Commit git saat build (lihat vite.config.ts). */
 	const __APP_COMMIT__: string;
+	/** Mode `pnpm dev` (lihat vite.config.ts). Selalu 'local' saat build. */
+	const __DEV_MODE__: 'demo' | 'staging' | 'local';
 
 	namespace App {
 		// interface Error {}
