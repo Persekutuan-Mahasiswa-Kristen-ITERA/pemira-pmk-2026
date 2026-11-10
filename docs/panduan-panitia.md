@@ -26,27 +26,33 @@ lainnya, foto terkunci begitu pemilihan dibuka, jadi pastikan sudah final sebelu
 
 ## Garis waktu
 
+> Situs resmi hanya **pemira.pmkitera.web.id**. Situs uji coba (staging) ditandai pita kuning
+> **"Situs uji coba"** di bagian atas dan memakai database terpisah: apa pun yang dilakukan di sana tidak
+> memengaruhi pemilihan resmi. Footer setiap situs menyebut database yang dipakai.
+
 ### 1. Persiapan (± 2 minggu sebelum hari pemilihan)
 
-1. **Susun DPT** dalam spreadsheet dengan kolom `nim` dan `nama`, lalu simpan sebagai CSV. Ekspor data
+1. **Super admin → Panitia**: undang akun Google setiap panitia yang perlu mengelola situs. Kirim pesan
+   undangan yang muncul setelah mengundang.
+2. **Susun DPT** dalam spreadsheet dengan kolom `nim` dan `nama`, lalu simpan sebagai CSV. Ekspor data
    kampus boleh langsung dipakai: kolom lain (email, prodi, angkatan, dst.) diabaikan dan tidak disimpan.
    Pemilih dicocokkan lewat NIM di email login `nama.nim@student.itera.ac.id`, jadi kolom email tidak wajib.
    - Berkas DPT adalah **data pribadi**. Jangan dibagikan di grup chat atau diunggah ke tempat publik.
-2. **Umumkan DPT sementara** dalam bentuk jumlah pemilih (atau daftar nama tanpa NIM), lalu buka
+3. **Umumkan DPT sementara** dalam bentuk jumlah pemilih (atau daftar nama tanpa NIM), lalu buka
    **masa sanggah** bagi anggota yang belum terdaftar.
-3. Setelah masa sanggah: buka **Admin → DPT**, impor CSV final. Catat **sidik jari DPT (SHA-256)** yang
+4. Setelah masa sanggah: buka **Admin → DPT**, impor CSV final. Catat **sidik jari DPT (SHA-256)** yang
    muncul dan umumkan bersama jumlah pemilih. Jika DPT diubah diam-diam, sidik jarinya akan berbeda.
-4. **Admin → Calon**: masukkan calon beserta nomor urut, visi, dan misi. Minta setiap calon memeriksa
-   tulisannya.
-5. **Admin → Ringkasan & jadwal**: atur waktu buka dan tutup (WIB).
+5. **Admin → Calon**: masukkan calon beserta nomor urut, visi, misi, dan foto. Minta setiap calon memeriksa
+   tulisan dan fotonya di beranda.
+6. **Admin → Ringkasan & jadwal**: atur waktu buka dan tutup (WIB).
 
-> Begitu waktu buka tiba, **DPT, daftar calon, dan jadwal terkunci permanen** oleh database. Pastikan
+> Begitu waktu buka tiba, **DPT, daftar calon (termasuk foto), dan jadwal terkunci permanen** oleh database. Pastikan
 > semuanya final sebelum itu.
 
 ### 2. Simulasi (± 1 minggu sebelumnya, di situs staging)
 
 1. **(developer)** Kosongkan database staging: `pnpm db:reset:staging`.
-2. Di situs staging, panitia memasukkan DPT uji (berisi NIM panitia/saksi yang punya email mahasiswa), calon contoh, dan jadwal
+2. Di situs staging (berpita **"Situs uji coba"**), panitia memasukkan DPT uji (berisi NIM panitia/saksi yang punya email mahasiswa), calon contoh, dan jadwal
    pendek (mis. 30 menit).
 3. Panitia dan saksi mencoba: login, memilih, menyimpan kode tanda terima, mencoba memilih dua kali (harus
    ditolak), lalu memeriksa kode di halaman Hasil setelah ditutup.

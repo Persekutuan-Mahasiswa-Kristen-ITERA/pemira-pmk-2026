@@ -5,6 +5,16 @@ dilanggar](#aturan-yang-tidak-boleh-dilanggar) sebelum mengubah apa pun yang men
 
 Cara menjalankan lokal dan daftar perintah ada di [README](../README.md#menjalankan-lokal).
 
+## Mulai di sini
+
+1. Minta akses ke repo GitHub kepada pembina (repo masih privat sampai dibuka untuk audit).
+2. Ikuti [Menjalankan lokal](../README.md#menjalankan-lokal). Isi `SUPER_ADMIN_EMAILS` di `.dev.vars`
+   dengan email Google-mu supaya bisa membuka `/admin` di lokal.
+3. Baca [Aturan yang tidak boleh dilanggar](#aturan-yang-tidak-boleh-dilanggar) dan
+   [Tampilan](#tampilan).
+4. Pengembangan lokal **tidak butuh** akses Cloudflare, Firebase, atau Google Cloud. Akses itu hanya untuk
+   deploy dan diberikan per orang oleh pemegang akun bila perlu.
+
 ## Gambaran arsitektur
 
 ```
@@ -39,22 +49,27 @@ Browser ──► Cloudflare Pages (SvelteKit, server-side) ──► Cloudflare
 
 ## Peta kode
 
-| Lokasi                      | Isi                                                                       |
-| --------------------------- | ------------------------------------------------------------------------- |
-| `migrations/0001_init.sql`  | Skema dan **semua aturan pemilihan** dalam bentuk trigger                 |
-| `src/lib/server/vote.ts`    | Status pemilih dan pencatatan suara (`castVote`)                          |
-| `src/lib/server/auth.ts`    | Verifikasi Firebase ID token                                              |
-| `src/lib/server/access.ts`  | Aturan domain email, NIM dari email, dan admin                            |
-| `src/lib/server/admin.ts`   | `requireAdmin`, `requireSuperAdmin`, pencatatan audit log                 |
-| `src/lib/server/admins.ts`  | Peran admin (super admin dari secret, admin undangan dari tabel)          |
-| `src/lib/server/photos.ts`  | Validasi foto calon                                                       |
-| `src/lib/server/results.ts` | Rekap, daftar surat suara, CSV + SHA-256                                  |
-| `src/lib/server/dpt.ts`     | Parser CSV DPT dan sidik jari DPT                                         |
-| `src/lib/server/testing/`   | SQLite di memori (`node:sqlite`) dengan shim D1 untuk tes                 |
-| `src/routes/pilih/`         | Surat suara; kode tanda terima hanya ditampilkan sekali                   |
-| `src/routes/hasil/`         | Hasil, pencarian kode, unduhan CSV (404 sebelum pemungutan suara ditutup) |
-| `src/routes/admin/`         | Ringkasan & jadwal, tutup darurat, calon + foto, DPT, audit log, panitia  |
-| `.github/workflows/`        | CI (lint, check, test, build) dan deploy                                  |
+| Lokasi                         | Isi                                                                                              |
+| ------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `migrations/`                  | Skema dan **aturan pemilihan** (trigger): 0001 dasar, 0002 DPT berbasis NIM, 0003 admin dan foto |
+| `src/lib/server/vote.ts`       | Status pemilih dan pencatatan suara (`castVote`)                                                 |
+| `src/lib/server/auth.ts`       | Verifikasi Firebase ID token                                                                     |
+| `src/lib/server/access.ts`     | Aturan domain email, NIM dari email, dan admin                                                   |
+| `src/lib/server/admin.ts`      | `requireAdmin`, `requireSuperAdmin`, pencatatan audit log                                        |
+| `src/lib/server/admins.ts`     | Peran admin (super admin dari secret, admin undangan dari tabel)                                 |
+| `src/lib/server/photos.ts`     | Validasi foto calon                                                                              |
+| `src/lib/server/candidates.ts` | URL foto per calon                                                                               |
+| `src/lib/resize-image.ts`      | Memperkecil foto di browser sebelum diunggah                                                     |
+| `src/lib/components/`          | Komponen tampilan bersama (lihat [Tampilan](#tampilan))                                          |
+| `src/routes/+layout.*`         | Header, footer, pita "uji coba", dan label database                                              |
+| `src/routes/foto-calon/`       | Foto calon (publik, cache panjang lewat URL berversi)                                            |
+| `src/lib/server/results.ts`    | Rekap, daftar surat suara, CSV + SHA-256                                                         |
+| `src/lib/server/dpt.ts`        | Parser CSV DPT dan sidik jari DPT                                                                |
+| `src/lib/server/testing/`      | SQLite di memori (`node:sqlite`) dengan shim D1 untuk tes                                        |
+| `src/routes/pilih/`            | Surat suara; kode tanda terima hanya ditampilkan sekali                                          |
+| `src/routes/hasil/`            | Hasil, pencarian kode, unduhan CSV (404 sebelum pemungutan suara ditutup)                        |
+| `src/routes/admin/`            | Ringkasan & jadwal, tutup darurat, calon + foto, DPT, audit log, panitia (super admin)           |
+| `.github/workflows/`           | CI (lint, check, test, build) dan deploy                                                         |
 
 ## Aturan yang tidak boleh dilanggar
 
@@ -77,6 +92,22 @@ Aturan integritas (satu orang satu suara, tidak bisa diubah, penguncian DPT/calo
 ditegakkan oleh trigger di database. Kode aplikasi boleh memeriksa lebih awal untuk pesan yang ramah,
 tetapi **jangan memindahkan** aturan dari trigger ke kode aplikasi.
 
+## Tampilan
+
+Tampilan memakai motif **surat suara kertas**. Pertahankan arah ini saat menambah halaman:
+
+- **Palet tetap.** Semua warna adalah token di `:root` pada `src/app.css` (`--paper`, `--sand`, `--brown`,
+  `--gold`, `--ink`, dst.). Jangan menulis warna baru langsung di komponen.
+- **Huruf:** Newsreader untuk judul (miring untuk penekanan, mis. `<em>`), Nunito Sans untuk teks, IBM Plex
+  Mono untuk kode tanda terima, hash, dan angka.
+- **Komponen bersama** di `src/lib/components/`: `BallotHead` (kepala surat suara), `Guilloche` (pola cetak
+  pengaman), `PhaseStamp` (stempel tahap), `Countdown`, `PunchHole` (bekas coblosan), `Seal` (logo).
+- **Kelas global** di `src/app.css`: `.button` (+ `-gold`, `-ghost`, `-danger`), `.sheet` (lembar kertas),
+  `.eyebrow`, `.msg-error`/`.msg-ok`, `.rise` (animasi masuk), `.visually-hidden`.
+- **Netral terhadap calon.** Jangan pernah menonjolkan atau menandai calon tertentu sebelum hasil diumumkan
+  (mis. contoh coblosan di beranda). Urutan selalu berdasarkan nomor urut.
+- Uji di lebar HP (390 px), dan pastikan animasi mati saat `prefers-reduced-motion`.
+
 ## Mengubah skema
 
 - Buat migrasi baru (`migrations/0004_....sql`). **Jangan mengedit** migrasi yang sudah
@@ -98,6 +129,13 @@ tetapi **jangan memindahkan** aturan dari trigger ke kode aplikasi.
 - Variabel `APP_ENV` (`production`/`staging`, di `wrangler.jsonc` pada blok yang sama dengan database-nya)
   ditampilkan di situs: staging dan lokal diberi pita "uji coba" di atas header, dan footer selalu
   menyebut database yang dipakai.
+- GitHub Actions memakai secret repo `CLOUDFLARE_API_TOKEN` (Pages Edit + D1 Edit) dan
+  `CLOUDFLARE_ACCOUNT_ID`.
+- Deploy manual (darurat, dari komputer yang sudah `wrangler login`, kode bersih tanpa perubahan):
+  ```sh
+  pnpm build && pnpm wrangler pages deploy --branch main --commit-hash "$(git rev-parse HEAD)" --commit-dirty=false
+  ```
+  Ganti `main` dengan `staging` untuk staging. Jalankan migrasi lebih dulu bila ada migrasi baru.
 - Secret diatur per lingkungan, tidak pernah di repo:
   ```sh
   pnpm wrangler pages secret put SUPER_ADMIN_EMAILS                 # production
@@ -125,6 +163,13 @@ tetapi **jangan memindahkan** aturan dari trigger ke kode aplikasi.
 - `worker-configuration.d.ts` dibuat ulang oleh `wrangler types` sebelum `check`/`build` dan tidak
   di-commit. Jalankan `pnpm gen` setelah mengubah `wrangler.jsonc`.
 - ESLint mewajibkan `resolve()` dari `$app/paths` untuk semua `href` dan `goto` internal.
+- SvelteKit 3: flag `dev` ada di `$app/env` (bukan `$app/environment`), dan tipe `SubmitFunction` diimpor
+  dari `$app/forms`.
+- Svelte 5 menulis ulang selector bertingkat dengan `:where(...)`, sehingga gaya lokal halaman admin bisa
+  kalah oleh `:global(...)` di `src/routes/admin/+layout.svelte`. Naikkan spesifisitas (mis.
+  `form.panel.cand`) bila gaya tidak berlaku.
+- `src/hooks.server.ts` membaca tabel `admins` di setiap request dari pengguna yang login (untuk peran).
+  Query ini kecil, tetapi jangan menambah query berat di hooks.
 - Content-Security-Policy belum dipasang karena popup Firebase memuat script dari `apis.google.com`;
   pasang setelah alur login teruji.
 
