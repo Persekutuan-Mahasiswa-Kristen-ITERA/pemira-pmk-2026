@@ -2,6 +2,8 @@
 	import { resolve } from '$app/paths';
 	import { normalizeReceiptCode } from '#lib/receipt-code.js';
 	import { formatWib } from '#lib/time.js';
+	import Countdown from '#lib/components/Countdown.svelte';
+	import Guilloche from '#lib/components/Guilloche.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -19,6 +21,8 @@
 			: undefined
 	);
 
+	let turnout = $derived(p.eligible ? (p.voted / p.eligible) * 100 : 0);
+
 	const pct = (n: number, of: number) => (of ? `${Math.round((n / of) * 1000) / 10}%` : '0%');
 </script>
 
@@ -27,234 +31,536 @@
 </svelte:head>
 
 <section class="container page">
-	<p class="eyebrow">Hasil pemilihan</p>
-	<h1>{data.election.title}</h1>
+	<header class="page-head rise">
+		<p class="eyebrow">Hasil pemilihan</p>
+		<h1>{data.election.title}</h1>
+	</header>
 
-	<p class="lead">
-		{p.voted} dari {p.eligible} pemilih ({pct(p.voted, p.eligible)}) telah memberikan suara.
-	</p>
+	<dl class="facts rise" style:--i="1">
+		<div>
+			<dt>Sudah memilih</dt>
+			<dd class="mono">{p.voted}</dd>
+		</div>
+		<div>
+			<dt>Pemilih terdaftar</dt>
+			<dd class="mono">{p.eligible}</dd>
+		</div>
+		<div>
+			<dt>Partisipasi</dt>
+			<dd class="mono">{pct(p.voted, p.eligible)}</dd>
+		</div>
+		<div class="facts-meter" aria-hidden="true">
+			<span style:width="{turnout}%"></span>
+		</div>
+	</dl>
 
 	{#if !results}
-		<div class="panel">
-			<p>
-				Hasil dan daftar surat suara akan dibuka di halaman ini setelah pemungutan suara ditutup{data
-					.election.closesAt
-					? ` (${formatWib(data.election.closesAt)})`
-					: ''}.
-			</p>
-			<p class="muted">
-				Kembali ke <a href={resolve('/')}>beranda</a>.
-			</p>
+		<div class="sealed rise" style:--i="2">
+			<div class="sealed-mark" aria-hidden="true">
+				<Guilloche strands={14} waves={8} inner={44} outer={98} strokeWidth={0.8} />
+			</div>
+			<div class="sealed-body">
+				<h2>Kotak suara masih <em>tersegel.</em></h2>
+				<p>
+					Hasil dan daftar surat suara akan dibuka di halaman ini setelah pemungutan suara ditutup{data
+						.election.closesAt
+						? ` (${formatWib(data.election.closesAt)})`
+						: ''}.
+				</p>
+				{#if data.election.phase === 'open' && data.election.closesAt !== null}
+					<div class="sealed-countdown">
+						<Countdown target={data.election.closesAt} label="Sisa waktu pemungutan suara" />
+					</div>
+				{/if}
+				<a class="text-link" href={resolve('/')}>Kembali ke beranda</a>
+			</div>
 		</div>
 	{:else}
-		<h2>Perolehan suara</h2>
-		<ol class="tally">
-			{#each results.tally as row (row.number)}
-				<li>
-					<div class="tally-head">
-						<span class="tally-name"><span class="no">{row.number}</span>{row.name}</span>
-						<span class="tally-votes"
-							>{row.votes} suara <span class="muted">({pct(row.votes, total)})</span></span
-						>
-					</div>
-					<div class="bar" aria-hidden="true">
-						<span style:width="{(row.votes / maxVotes) * 100}%"></span>
-					</div>
-				</li>
-			{/each}
-		</ol>
-		<p class="check" class:bad={p.voted !== results.ballots.length}>
-			{#if p.voted === results.ballots.length}
-				✓ Jumlah surat suara ({results.ballots.length}) sama dengan jumlah pemilih yang tercatat
-				sudah memilih ({p.voted}).
-			{:else}
-				⚠ Jumlah surat suara ({results.ballots.length}) berbeda dengan jumlah pemilih yang tercatat
-				sudah memilih ({p.voted}).
-			{/if}
-		</p>
-
-		<h2>Periksa suaramu</h2>
-		<div class="panel">
-			<label class="lookup">
-				Kode tanda terima
-				<input
-					bind:value={codeInput}
-					placeholder="XXXXX-XXXXX"
-					autocomplete="off"
-					spellcheck="false"
-					maxlength="16"
-				/>
-			</label>
-			{#if found}
-				<p class="lookup-result ok">
-					Kode <strong>{found.code}</strong> tercatat untuk calon
-					<strong>No. {found.number}</strong>.
-				</p>
-			{:else if found === null}
-				<p class="lookup-result bad">
-					Kode <strong>{lookupCode}</strong> tidak ditemukan. Periksa kembali penulisannya; jika tetap
-					tidak ada, laporkan ke panitia dan saksi.
-				</p>
-			{/if}
-		</div>
-
-		<h2>Audit</h2>
-		<div class="panel">
-			<p>
-				Semua {results.ballots.length} surat suara (kode → nomor calon) dapat diunduh dan dihitung ulang
-				oleh siapa saja.
+		<section class="block" aria-labelledby="perolehan">
+			<h2 id="perolehan">Perolehan <em>suara</em></h2>
+			<ol class="tally">
+				{#each results.tally as row, i (row.number)}
+					{@const top = row.votes > 0 && row.votes === maxVotes}
+					<li class:top style:--i={i}>
+						<span class="no" aria-hidden="true">{row.number}</span>
+						<div class="tally-main">
+							<p class="tally-name">
+								<span class="visually-hidden">Nomor {row.number}, </span>{row.name}
+								{#if top}<span class="badge">Suara terbanyak</span>{/if}
+							</p>
+							<div class="bar" aria-hidden="true">
+								<span style:width="{(row.votes / maxVotes) * 100}%"></span>
+							</div>
+						</div>
+						<p class="tally-votes">
+							<span class="pct">{pct(row.votes, total)}</span>
+							<span class="count mono">{row.votes} suara</span>
+						</p>
+					</li>
+				{/each}
+			</ol>
+			<p class="check" class:bad={p.voted !== results.ballots.length}>
+				{#if p.voted === results.ballots.length}
+					<span class="check-icon" aria-hidden="true">✓</span>
+					Jumlah surat suara ({results.ballots.length}) sama dengan jumlah pemilih yang tercatat
+					sudah memilih ({p.voted}).
+				{:else}
+					<span class="check-icon" aria-hidden="true">!</span>
+					Jumlah surat suara ({results.ballots.length}) berbeda dengan jumlah pemilih yang tercatat
+					sudah memilih ({p.voted}).
+				{/if}
 			</p>
-			<a class="button" href={resolve('/hasil/surat-suara.csv')} download
-				>Unduh daftar surat suara (CSV)</a
-			>
-			<p class="muted">SHA-256 berkas:</p>
-			<p class="mono">{results.sha256}</p>
-			<p class="muted">
-				Periksa keaslian berkas dengan <code
-					>shasum -a 256 surat-suara-pemira-pmk-itera-2027.csv</code
-				>
-				(macOS/Linux) atau <code>certutil -hashfile &lt;berkas&gt; SHA256</code> (Windows).
-			</p>
+		</section>
+
+		<div class="split">
+			<section class="lookup-card" aria-labelledby="periksa">
+				<h2 id="periksa">Periksa <em>suaramu</em></h2>
+				<p class="muted">Ketik kode tanda terima yang kamu simpan saat memilih.</p>
+				<label class="lookup">
+					<span>Kode tanda terima</span>
+					<input
+						bind:value={codeInput}
+						placeholder="XXXXX-XXXXX"
+						autocomplete="off"
+						spellcheck="false"
+						maxlength="16"
+					/>
+				</label>
+				{#if found}
+					<p class="msg msg-ok">
+						Kode <strong class="mono">{found.code}</strong> tercatat untuk calon
+						<strong>No. {found.number}</strong>.
+					</p>
+				{:else if found === null}
+					<p class="msg msg-error">
+						<span>
+							Kode <strong class="mono">{lookupCode}</strong> tidak ditemukan. Periksa kembali penulisannya;
+							jika tetap tidak ada, laporkan ke panitia dan saksi.
+						</span>
+					</p>
+				{/if}
+			</section>
+
+			<section class="audit" aria-labelledby="audit">
+				<h2 id="audit">Audit <em>mandiri</em></h2>
+				<p>
+					Semua {results.ballots.length} surat suara (kode → nomor calon) dapat diunduh dan dihitung ulang
+					oleh siapa saja.
+				</p>
+				<a class="button button-gold" href={resolve('/hasil/surat-suara.csv')} download>
+					Unduh daftar surat suara (CSV)
+				</a>
+				<p class="hash-label">SHA-256 berkas</p>
+				<p class="hash mono">{results.sha256}</p>
+				<p class="audit-help">
+					Periksa keaslian berkas dengan <code
+						>shasum -a 256 surat-suara-pemira-pmk-itera-2027.csv</code
+					>
+					(macOS/Linux) atau <code>certutil -hashfile &lt;berkas&gt; SHA256</code> (Windows).
+				</p>
+			</section>
 		</div>
 	{/if}
 </section>
 
 <style>
 	.page {
-		padding-block: 56px 96px;
-	}
-
-	.page > :global(*) {
-		max-width: 760px;
+		padding-block: clamp(32px, 6vw, 72px) 32px;
 	}
 
 	h1 {
 		margin-top: 16px;
-		font-size: clamp(32px, 5vw, 50px);
+		max-width: 18ch;
+		font-size: clamp(38px, 5.6vw, 64px);
+		font-weight: 450;
 	}
 
 	h2 {
-		margin-top: 44px;
-		font-size: 28px;
-	}
-
-	.lead {
-		margin-top: 16px;
-		font-size: 17px;
-		color: var(--ink-soft);
-	}
-
-	.panel {
-		display: grid;
-		gap: 12px;
-		justify-items: start;
-		margin-top: 18px;
-		padding: 20px;
-		background: var(--paper-light);
-		border: 1px solid var(--line);
-	}
-
-	.panel a:not(.button) {
-		color: var(--brown);
-		font-weight: 700;
+		font-size: clamp(28px, 3.4vw, 38px);
+		font-weight: 450;
 	}
 
 	.muted {
-		font-size: 14px;
+		margin-top: 8px;
+		font-size: 15px;
 		color: var(--ink-muted);
 	}
 
-	.mono {
-		font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-		font-size: 13px;
-		word-break: break-all;
+	.text-link {
+		font-weight: 800;
+		color: var(--brown);
+		text-decoration-color: var(--gold);
+		text-decoration-thickness: 2px;
+		text-underline-offset: 5px;
+	}
+
+	/* Angka partisipasi */
+	.facts {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		margin: 36px 0 0;
+		border-radius: var(--radius);
+		overflow: hidden;
+		background: var(--paper-light);
+		box-shadow:
+			var(--shadow-soft),
+			inset 0 0 0 1px rgb(215 201 179 / 0.8);
+	}
+
+	.facts > div:not(.facts-meter) {
+		padding: 20px 24px 18px;
+	}
+
+	.facts > div + div:not(.facts-meter) {
+		border-left: 1px solid var(--line);
+	}
+
+	dt {
+		font-size: 11px;
+		font-weight: 800;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--ink-muted);
+	}
+
+	dd {
+		margin: 6px 0 0;
+		font-size: clamp(26px, 4vw, 40px);
+		font-weight: 600;
+		line-height: 1;
+		color: var(--brown-dark);
+	}
+
+	.facts-meter {
+		grid-column: 1 / -1;
+		height: 6px;
+		background: var(--sand);
+	}
+
+	.facts-meter span {
+		display: block;
+		height: 100%;
+		background: linear-gradient(90deg, var(--brown), var(--gold));
+	}
+
+	/* Belum ditutup */
+	.sealed {
+		position: relative;
+		display: grid;
+		grid-template-columns: 180px 1fr;
+		align-items: center;
+		gap: 32px;
+		margin-top: 32px;
+		padding: clamp(24px, 4vw, 40px);
+		border: 1.5px dashed var(--line);
+		border-radius: var(--radius);
+	}
+
+	.sealed-mark {
+		color: var(--gold);
+	}
+
+	.sealed-body {
+		display: grid;
+		justify-items: start;
+		gap: 14px;
+	}
+
+	.sealed-body p {
+		max-width: 54ch;
+		color: var(--ink-soft);
+	}
+
+	.sealed-countdown {
+		width: min(100%, 420px);
+	}
+
+	/* Perolehan */
+	.block {
+		margin-top: 56px;
 	}
 
 	.tally {
 		display: grid;
-		gap: 18px;
-		margin: 20px 0 0;
+		gap: 12px;
+		margin: 24px 0 0;
 		padding: 0;
 		list-style: none;
 	}
 
-	.tally-head {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: space-between;
-		gap: 4px 16px;
-		margin-bottom: 8px;
+	.tally li {
+		display: grid;
+		grid-template-columns: 72px minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 20px;
+		padding: 18px 24px 18px 20px;
+		border-radius: var(--radius);
+		background: var(--paper-light);
+		box-shadow: inset 0 0 0 1px rgb(215 201 179 / 0.8);
+		animation: rise 0.7s var(--ease-out) both;
+		animation-delay: calc(var(--i) * 100ms + 150ms);
 	}
 
-	.tally-name {
-		font: 600 22px var(--font-display);
+	.tally li.top {
+		background: #fffdf8;
+		box-shadow:
+			inset 0 0 0 1.5px var(--brown),
+			var(--shadow-soft);
 	}
 
 	.no {
-		margin-right: 12px;
+		font: italic 400 64px/0.85 var(--font-display);
 		color: var(--gold-dark);
+		text-align: center;
 	}
 
-	.tally-votes {
-		font-weight: 700;
+	.tally-main {
+		display: grid;
+		gap: 10px;
+	}
+
+	.tally-name {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 4px 12px;
+		font: 500 24px/1.2 var(--font-display);
+	}
+
+	.badge {
+		padding: 3px 10px;
+		border-radius: 999px;
+		background: var(--brown);
+		color: var(--gold-light);
+		font: 800 11px var(--font-body);
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
 	}
 
 	.bar {
 		height: 12px;
+		border-radius: 999px;
 		background: var(--sand);
+		overflow: hidden;
 	}
 
 	.bar span {
 		display: block;
 		height: 100%;
-		background: var(--brown);
+		border-radius: inherit;
+		background: var(--gold);
+		transform-origin: left;
+		animation: grow 1.1s 0.4s var(--ease-out) both;
+	}
+
+	.top .bar span {
+		background: linear-gradient(90deg, var(--brown-dark), var(--brown));
+	}
+
+	@keyframes grow {
+		from {
+			transform: scaleX(0);
+		}
+	}
+
+	.tally-votes {
+		display: grid;
+		justify-items: end;
+		text-align: right;
+	}
+
+	.pct {
+		font: 500 34px/1 var(--font-display);
+		color: var(--ink);
+	}
+
+	.count {
+		margin-top: 4px;
+		font-size: 13px;
+		color: var(--ink-muted);
 	}
 
 	.check {
-		margin-top: 20px;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin-top: 18px;
 		font-size: 14px;
-		color: #34470f;
+		color: var(--ok);
+	}
+
+	.check-icon {
+		display: grid;
+		place-items: center;
+		flex: none;
+		width: 22px;
+		height: 22px;
+		border-radius: 50%;
+		background: var(--ok-bg);
+		box-shadow: inset 0 0 0 1px var(--ok-line);
+		font-size: 12px;
+		font-weight: 800;
 	}
 
 	.check.bad {
-		color: #8f2f1c;
+		color: var(--danger);
 		font-weight: 700;
+	}
+
+	.check.bad .check-icon {
+		background: var(--danger-bg);
+		box-shadow: inset 0 0 0 1px var(--danger-line);
+	}
+
+	/* Periksa dan audit */
+	.split {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		align-items: start;
+		gap: 20px;
+		margin-top: 56px;
+	}
+
+	.lookup-card,
+	.audit {
+		display: grid;
+		align-content: start;
+		justify-items: start;
+		gap: 14px;
+		padding: clamp(22px, 3.5vw, 36px);
+		border-radius: var(--radius);
+	}
+
+	.lookup-card {
+		background: var(--paper-light);
+		box-shadow:
+			var(--shadow-soft),
+			inset 0 0 0 1px rgb(215 201 179 / 0.8);
 	}
 
 	.lookup {
 		display: grid;
-		gap: 6px;
-		font-weight: 700;
-		font-size: 14px;
+		gap: 8px;
+		width: 100%;
+		margin-top: 6px;
+		font-size: 12px;
+		font-weight: 800;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--ink-muted);
 	}
 
 	.lookup input {
-		width: min(260px, 100%);
-		padding: 10px 12px;
-		border: 1px solid var(--line);
+		width: 100%;
+		padding: 14px 16px;
+		border: 1.5px solid var(--line);
+		border-radius: var(--radius-sm);
 		background: #fff;
-		font:
-			700 20px ui-monospace,
-			'SF Mono',
-			Menlo,
-			monospace;
-		letter-spacing: 0.06em;
+		font: 600 clamp(20px, 3vw, 26px) var(--font-mono);
+		letter-spacing: 0.08em;
 		text-transform: uppercase;
+		color: var(--ink);
+		transition:
+			border-color 0.2s,
+			box-shadow 0.2s;
 	}
 
-	.lookup-result {
-		padding: 10px 12px;
-		border-left: 3px solid;
-		font-size: 15px;
+	.lookup input::placeholder {
+		color: var(--line);
 	}
 
-	.lookup-result.ok {
-		background: #eaf0dc;
-		border-color: #5b7a2a;
+	.lookup input:focus {
+		outline: none;
+		border-color: var(--gold);
+		box-shadow: 0 0 0 4px rgb(197 154 39 / 0.25);
 	}
 
-	.lookup-result.bad {
-		background: #f7e6dc;
-		border-color: #a3402a;
+	.audit {
+		background: var(--brown-dark);
+		color: var(--sand);
+	}
+
+	.audit h2 {
+		color: var(--paper-light);
+	}
+
+	.audit h2 em {
+		color: var(--gold);
+	}
+
+	.hash-label {
+		margin-top: 8px;
+		font-size: 11px;
+		font-weight: 800;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--gold);
+	}
+
+	.hash {
+		width: 100%;
+		margin-top: -6px;
+		padding: 12px 14px;
+		border-radius: var(--radius-sm);
+		background: rgb(0 0 0 / 0.22);
+		font-size: 13px;
+		color: var(--gold-light);
+		word-break: break-all;
+	}
+
+	.audit-help {
+		font-size: 13px;
+	}
+
+	.audit code {
+		background: rgb(255 255 255 / 0.08);
+		color: var(--paper-light);
+	}
+
+	@media (max-width: 800px) {
+		.split {
+			grid-template-columns: 1fr;
+		}
+
+		.sealed {
+			grid-template-columns: 1fr;
+		}
+
+		.sealed-mark {
+			width: 96px;
+		}
+	}
+
+	@media (max-width: 560px) {
+		.facts > div:not(.facts-meter) {
+			padding: 16px 14px 14px;
+		}
+
+		dt {
+			font-size: 10px;
+			letter-spacing: 0.08em;
+		}
+
+		.tally li {
+			grid-template-columns: 44px minmax(0, 1fr);
+			gap: 12px 14px;
+			padding: 16px;
+		}
+
+		.no {
+			font-size: 44px;
+		}
+
+		.tally-votes {
+			grid-column: 2;
+			grid-template-columns: auto auto;
+			justify-content: start;
+			align-items: baseline;
+			gap: 10px;
+		}
+
+		.pct {
+			font-size: 26px;
+		}
 	}
 </style>

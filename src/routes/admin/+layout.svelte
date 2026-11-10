@@ -6,158 +6,225 @@
 	let { children }: LayoutProps = $props();
 
 	const links = [
-		{ href: resolve('/admin'), label: 'Ringkasan & jadwal' },
-		{ href: resolve('/admin/calon'), label: 'Calon' },
-		{ href: resolve('/admin/dpt'), label: 'DPT' },
-		{ href: resolve('/admin/audit'), label: 'Audit log' }
+		{ href: resolve('/admin'), label: 'Ringkasan & jadwal', hint: 'Status dan waktu pemilihan' },
+		{ href: resolve('/admin/calon'), label: 'Calon', hint: 'Nomor urut, visi, misi' },
+		{ href: resolve('/admin/dpt'), label: 'DPT', hint: 'Daftar pemilih tetap' },
+		{ href: resolve('/admin/audit'), label: 'Audit log', hint: 'Riwayat tindakan admin' }
 	];
 </script>
 
 <div class="container admin">
-	<p class="eyebrow">Panel panitia</p>
-	<nav aria-label="Navigasi admin">
-		{#each links as link (link.href)}
-			<a href={link.href} aria-current={page.url.pathname === link.href ? 'page' : undefined}>
-				{link.label}
-			</a>
-		{/each}
-	</nav>
-	{@render children()}
+	<aside class="side">
+		<p class="eyebrow">Panel panitia</p>
+		<nav aria-label="Navigasi admin">
+			{#each links as link (link.href)}
+				<a href={link.href} aria-current={page.url.pathname === link.href ? 'page' : undefined}>
+					<span class="link-label">{link.label}</span>
+					<span class="link-hint">{link.hint}</span>
+				</a>
+			{/each}
+		</nav>
+	</aside>
+	<div class="content">
+		{@render children()}
+	</div>
 </div>
 
 <style>
 	.admin {
-		padding-block: 32px 96px;
+		display: grid;
+		grid-template-columns: 240px minmax(0, 1fr);
+		align-items: start;
+		gap: 48px;
+		padding-block: 40px 32px;
+	}
+
+	.side {
+		position: sticky;
+		top: 96px;
 	}
 
 	nav {
-		display: flex;
-		flex-wrap: wrap;
+		display: grid;
 		gap: 4px;
-		margin: 14px 0 36px;
-		border-bottom: 1px solid var(--line);
+		margin-top: 16px;
 	}
 
 	nav a {
+		display: grid;
+		gap: 1px;
 		padding: 10px 14px;
-		font-size: 14px;
-		font-weight: 700;
-		color: var(--ink-muted);
+		border-radius: 12px;
 		text-decoration: none;
-		border-bottom: 3px solid transparent;
-		margin-bottom: -1px;
+		transition: background-color 0.15s;
 	}
 
 	nav a:hover {
-		color: var(--ink);
+		background: rgb(98 67 31 / 0.07);
 	}
 
 	nav a[aria-current='page'] {
-		color: var(--brown);
-		border-bottom-color: var(--brown);
+		background: var(--brown-dark);
+		color: var(--paper-light);
+	}
+
+	.link-label {
+		font-size: 15px;
+		font-weight: 800;
+	}
+
+	.link-hint {
+		font-size: 12px;
+		color: var(--ink-muted);
+	}
+
+	nav a[aria-current='page'] .link-hint {
+		color: var(--gold-light);
+	}
+
+	@media (max-width: 860px) {
+		.admin {
+			grid-template-columns: 1fr;
+			gap: 28px;
+		}
+
+		.side {
+			position: static;
+		}
+
+		nav {
+			display: flex;
+			gap: 6px;
+			overflow-x: auto;
+			padding-bottom: 4px;
+		}
+
+		nav a {
+			flex: none;
+			padding: 8px 14px;
+			border-radius: 999px;
+			box-shadow: inset 0 0 0 1px var(--line);
+		}
+
+		nav a[aria-current='page'] {
+			box-shadow: none;
+		}
+
+		.link-hint {
+			display: none;
+		}
 	}
 
 	/* Gaya bersama untuk halaman admin */
-	.admin :global(h1) {
-		font-size: clamp(30px, 4vw, 42px);
+	.content :global(h1) {
+		font-size: clamp(34px, 4.4vw, 48px);
+		font-weight: 450;
 	}
 
-	.admin :global(h2) {
-		font-size: 24px;
-		margin-top: 40px;
+	.content :global(h2) {
+		margin-top: 44px;
+		font-size: 26px;
+		font-weight: 500;
 	}
 
-	.admin :global(.panel) {
+	.content :global(.panel) {
 		margin-top: 16px;
-		padding: 20px;
+		padding: clamp(18px, 3vw, 28px);
+		border-radius: var(--radius);
 		background: var(--paper-light);
-		border: 1px solid var(--line);
+		box-shadow:
+			var(--shadow-soft),
+			inset 0 0 0 1px rgb(215 201 179 / 0.8);
 	}
 
-	.admin :global(.field) {
+	.content :global(.field) {
 		display: grid;
 		gap: 6px;
-		margin-bottom: 16px;
-		font-size: 14px;
-		font-weight: 700;
+		margin-bottom: 18px;
+		font-size: 13px;
+		font-weight: 800;
+		color: var(--ink-soft);
 	}
 
-	.admin :global(.field input),
-	.admin :global(.field textarea) {
-		font: 400 15px var(--font-body);
-		padding: 10px 12px;
-		border: 1px solid var(--line);
+	.content :global(.field input),
+	.content :global(.field textarea) {
+		width: 100%;
+		padding: 11px 14px;
+		border: 1.5px solid var(--line);
+		border-radius: var(--radius-sm);
 		background: #fff;
+		font: 400 15px var(--font-body);
 		color: var(--ink);
+		transition:
+			border-color 0.2s,
+			box-shadow 0.2s;
 	}
 
-	.admin :global(.field input:disabled) {
+	.content :global(.field textarea) {
+		resize: vertical;
+	}
+
+	.content :global(.field input:focus),
+	.content :global(.field textarea:focus) {
+		outline: none;
+		border-color: var(--gold);
+		box-shadow: 0 0 0 4px rgb(197 154 39 / 0.25);
+	}
+
+	.content :global(.field input:disabled),
+	.content :global(.field textarea:disabled) {
 		background: var(--paper);
 		color: var(--ink-muted);
 	}
 
-	.admin :global(.hint) {
-		font-size: 13px;
+	.content :global(.field input[type='file']) {
+		padding: 8px;
+		border-style: dashed;
+	}
+
+	.content :global(.hint) {
+		font-size: 14px;
 		font-weight: 400;
 		color: var(--ink-muted);
 	}
 
-	.admin :global(.msg-error),
-	.admin :global(.msg-ok) {
+	.content :global(.msg-error),
+	.content :global(.msg-ok) {
 		margin: 16px 0;
-		padding: 12px 14px;
-		font-size: 14px;
-		border-left: 3px solid;
 	}
 
-	.admin :global(.msg-error) {
-		background: #f7e6dc;
-		border-color: #a3402a;
-		color: #6b2414;
-	}
-
-	.admin :global(.msg-ok) {
-		background: #eaf0dc;
-		border-color: #5b7a2a;
-		color: #34470f;
-	}
-
-	.admin :global(.button-danger) {
-		background: #8f2f1c;
-	}
-
-	.admin :global(.button-danger:hover) {
-		background: #6b2414;
-	}
-
-	.admin :global(.button:disabled) {
-		opacity: 0.55;
-		cursor: not-allowed;
-	}
-
-	.admin :global(table) {
+	.content :global(table) {
 		width: 100%;
 		border-collapse: collapse;
 		font-size: 14px;
 	}
 
-	.admin :global(th),
-	.admin :global(td) {
+	.content :global(th),
+	.content :global(td) {
 		text-align: left;
-		padding: 10px 8px;
+		padding: 12px 14px;
 		border-bottom: 1px solid var(--line);
 		vertical-align: top;
 	}
 
-	.admin :global(th) {
-		font-size: 12px;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--ink-muted);
+	.content :global(tbody tr:last-child td) {
+		border-bottom: 0;
 	}
 
-	.admin :global(.mono) {
-		font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+	.content :global(tbody tr:hover) {
+		background: rgb(223 207 173 / 0.25);
+	}
+
+	.content :global(th) {
+		background: var(--sand);
+		font-size: 11px;
+		font-weight: 800;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--brown-dark);
+	}
+
+	.content :global(.mono) {
 		font-size: 13px;
 		word-break: break-all;
 	}

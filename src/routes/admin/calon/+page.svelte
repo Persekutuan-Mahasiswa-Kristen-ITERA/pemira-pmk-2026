@@ -21,7 +21,8 @@
 {/if}
 
 {#each data.candidates as c (c.id)}
-	<form method="POST" action="?/update" use:enhance class="panel">
+	<form method="POST" action="?/update" use:enhance class="panel cand">
+		<span class="cand-badge" aria-hidden="true">{c.number}</span>
 		<input type="hidden" name="id" value={c.id} />
 		<fieldset disabled={data.locked}>
 			<div class="row">
@@ -101,9 +102,33 @@
 		gap: 0 16px;
 	}
 
+	form.panel.cand {
+		position: relative;
+		padding-left: 104px;
+	}
+
+	.cand-badge {
+		position: absolute;
+		top: 18px;
+		left: 28px;
+		font: italic 400 56px/1 var(--font-display);
+		color: var(--gold-dark);
+	}
+
 	.actions {
 		display: flex;
-		gap: 12px;
+		flex-wrap: wrap;
+		gap: 10px;
+	}
+
+	@media (max-width: 700px) {
+		form.panel.cand {
+			padding-left: 18px;
+		}
+
+		.cand-badge {
+			display: none;
+		}
 	}
 
 	@media (max-width: 480px) {

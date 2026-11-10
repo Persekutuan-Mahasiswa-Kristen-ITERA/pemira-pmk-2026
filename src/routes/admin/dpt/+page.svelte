@@ -27,8 +27,8 @@
 {/if}
 {#if form?.ok}<p class="msg-ok" role="status">{form.ok}</p>{/if}
 
-<div class="panel">
-	<p><strong>{data.count}</strong> pemilih terdaftar.</p>
+<div class="panel count-panel">
+	<p class="count"><strong>{data.count}</strong> pemilih terdaftar</p>
 	{#if data.fingerprint}
 		<p class="hint">Sidik jari DPT (SHA-256, umumkan saat DPT dikunci):</p>
 		<p class="mono">{data.fingerprint}</p>
@@ -77,11 +77,31 @@
 {/if}
 
 <style>
+	.count-panel {
+		display: grid;
+		gap: 8px;
+	}
+
+	.count {
+		font-size: 15px;
+		color: var(--ink-soft);
+	}
+
+	.count strong {
+		margin-right: 8px;
+		font-family: var(--font-mono);
+		font-size: 40px;
+		font-weight: 600;
+		color: var(--brown-dark);
+		vertical-align: -4px;
+	}
+
 	.example {
-		margin: 12px 0 16px;
-		padding: 12px;
-		background: #fff;
-		border: 1px solid var(--line);
+		margin: 14px 0 18px;
+		padding: 14px 16px;
+		border-radius: var(--radius-sm);
+		background: var(--brown-dark);
+		color: var(--gold-light);
 		white-space: pre-wrap;
 	}
 

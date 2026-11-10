@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { formatWib } from '#lib/time.js';
+	import PhaseStamp from '#lib/components/PhaseStamp.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -28,9 +29,10 @@
 {#if form?.ok}<p class="msg-ok" role="status">{form.ok}</p>{/if}
 
 <div class="stats">
-	<div class="stat">
+	<div class="stat stat-phase">
 		<p class="stat-label">Status</p>
-		<p class="stat-value">{PHASE_LABEL[election.phase]}</p>
+		<p class="stat-value"><PhaseStamp phase={election.phase} small /></p>
+		<p class="visually-hidden">{PHASE_LABEL[election.phase]}</p>
 	</div>
 	<div class="stat">
 		<p class="stat-label">DPT</p>
@@ -38,7 +40,8 @@
 	</div>
 	<div class="stat">
 		<p class="stat-label">Sudah memilih</p>
-		<p class="stat-value">{p.voted} <span class="stat-sub">({percent}%)</span></p>
+		<p class="stat-value">{p.voted} <span class="stat-sub">{percent}%</span></p>
+		<div class="mini-meter" aria-hidden="true"><span style:width="{percent}%"></span></div>
 	</div>
 	<div class="stat">
 		<p class="stat-label">Surat suara</p>
@@ -108,7 +111,7 @@
 			<input name="reason" required />
 		</label>
 		<label class="field">
-			Ketik <code>TUTUP</code> untuk konfirmasi
+			<span>Ketik <code>TUTUP</code> untuk konfirmasi</span>
 			<input name="confirm" required autocomplete="off" />
 		</label>
 		<button class="button button-danger" type="submit">Tutup pemungutan suara sekarang</button>
@@ -118,33 +121,67 @@
 <style>
 	.stats {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
 		gap: 12px;
-		margin-top: 20px;
+		margin-top: 24px;
 	}
 
 	.stat {
-		padding: 16px;
+		position: relative;
+		display: grid;
+		align-content: space-between;
+		gap: 10px;
+		min-height: 118px;
+		padding: 18px 20px;
+		border-radius: var(--radius);
 		background: var(--paper-light);
-		border: 1px solid var(--line);
+		box-shadow:
+			var(--shadow-soft),
+			inset 0 0 0 1px rgb(215 201 179 / 0.8);
+	}
+
+	.stat-phase {
+		background: var(--brown-dark);
+		box-shadow: var(--shadow-soft);
+	}
+
+	.stat-phase .stat-label {
+		color: var(--gold);
+	}
+
+	.stat-phase :global(.stamp) {
+		color: var(--gold-light);
 	}
 
 	.stat-label {
-		font-size: 12px;
-		font-weight: 700;
-		letter-spacing: 0.08em;
+		font-size: 11px;
+		font-weight: 800;
+		letter-spacing: 0.14em;
 		text-transform: uppercase;
 		color: var(--ink-muted);
 	}
 
 	.stat-value {
-		margin-top: 6px;
-		font: 600 26px var(--font-display);
+		font: 600 36px/1 var(--font-mono);
+		color: var(--brown-dark);
 	}
 
 	.stat-sub {
-		font: 400 14px var(--font-body);
-		color: var(--ink-muted);
+		font: 700 14px var(--font-body);
+		color: var(--gold-dark);
+	}
+
+	.mini-meter {
+		height: 6px;
+		border-radius: 999px;
+		background: var(--sand);
+		overflow: hidden;
+	}
+
+	.mini-meter span {
+		display: block;
+		height: 100%;
+		background: linear-gradient(90deg, var(--brown), var(--gold));
 	}
 
 	.row {
@@ -154,10 +191,15 @@
 	}
 
 	.panel .hint {
-		margin-bottom: 16px;
+		margin-bottom: 18px;
 	}
 
-	.danger {
-		border-color: #c99a8c;
+	form.panel.danger {
+		background: var(--danger-bg);
+		box-shadow: inset 0 0 0 1.5px rgb(163 64 42 / 0.4);
+	}
+
+	.danger .hint {
+		color: var(--danger-ink);
 	}
 </style>

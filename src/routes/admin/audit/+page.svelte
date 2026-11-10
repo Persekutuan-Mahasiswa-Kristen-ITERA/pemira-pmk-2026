@@ -41,5 +41,14 @@
 	.scroll {
 		margin-top: 20px;
 		overflow-x: auto;
+		border-radius: var(--radius);
+		background: var(--paper-light);
+		box-shadow:
+			var(--shadow-soft),
+			inset 0 0 0 1px rgb(215 201 179 / 0.8);
+	}
+
+	h1 + .hint {
+		margin-top: 10px;
 	}
 </style>
