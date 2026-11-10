@@ -1,46 +1,78 @@
+<div align="center">
+
+<img src="src/lib/assets/favicon.svg" alt="" width="72" height="72">
+
 # Pemira PMK ITERA 2027
 
-Aplikasi e-voting untuk **Pemilihan Ketua PMK ITERA 2027**. Kode sumbernya terbuka supaya siapa pun
-bisa mengaudit cara suara dicatat dan dihitung.
+**E-voting terbuka untuk Pemilihan Ketua Persekutuan Mahasiswa Kristen ITERA.**<br>
+Kode sumbernya publik supaya siapa pun bisa mengaudit cara suara dicatat dan dihitung.
 
-## Prinsip
+[![CI](https://github.com/Persekutuan-Mahasiswa-Kristen-ITERA/pemira-pmk-2026/actions/workflows/ci.yml/badge.svg)](https://github.com/Persekutuan-Mahasiswa-Kristen-ITERA/pemira-pmk-2026/actions/workflows/ci.yml)
+![SvelteKit](https://img.shields.io/badge/SvelteKit-FF3E00?logo=svelte&logoColor=white)
+![Cloudflare Pages](https://img.shields.io/badge/Cloudflare_Pages-F38020?logo=cloudflare&logoColor=white)
+![Cloudflare D1](<https://img.shields.io/badge/D1_(SQLite)-003B57?logo=sqlite&logoColor=white>)
+![Firebase Auth](https://img.shields.io/badge/Firebase_Auth-DD2C00?logo=firebase&logoColor=white)
 
-| Prinsip               | Penerapan                                                                                                                             |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Hanya pemilih sah     | Login Google dengan email `@student.itera.ac.id` yang terdaftar di DPT (mahasiswa Kristen aktif).                                     |
-| Satu orang satu suara | Email hanya bisa tercatat sekali; penanda "sudah memilih" dan surat suara disimpan dalam satu transaksi.                              |
-| Rahasia               | Identitas (`voted`) dan isi suara (`ballots`) disimpan terpisah tanpa penghubung, tanpa timestamp, tanpa urutan.                      |
-| Bisa diverifikasi     | Setiap pemilih mendapat kode tanda terima acak. Setelah ditutup, daftar `kode → calon` dipublikasikan untuk dicek dan dihitung ulang. |
-| Tidak bisa diubah     | Surat suara, penanda sudah memilih, dan audit log tidak bisa diubah/dihapus. DPT, calon, dan jadwal terkunci saat pemilihan dibuka.   |
+[**pemira.pmkitera.web.id**](https://pemira.pmkitera.web.id) ·
+[Verifikasi hasil](#-verifikasi-hasil) ·
+[Panduan panitia](docs/panduan-panitia.md) ·
+[Panduan developer](docs/developer.md)
 
-Aturan-aturan ini ditegakkan **di database** lewat trigger SQL, bukan hanya di kode aplikasi.
-Lihat [`migrations/0001_init.sql`](migrations/0001_init.sql) dan tesnya di
-[`src/lib/server/db/schema.spec.ts`](src/lib/server/db/schema.spec.ts).
+</div>
 
-## Untuk panitia
+---
 
-Langkah persiapan, simulasi, hari pemilihan, dan rekapitulasi ada di
-[`docs/panduan-panitia.md`](docs/panduan-panitia.md).
+## ✨ Prinsip
 
-## Deploy
+| Prinsip                      | Penerapan                                                                                                                       |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 🎓 **Hanya pemilih sah**     | Login Google dengan email `@student.itera.ac.id` yang terdaftar di DPT (mahasiswa Kristen aktif).                               |
+| ☝️ **Satu orang satu suara** | Email hanya bisa tercatat sekali; penanda "sudah memilih" dan surat suara disimpan dalam satu transaksi.                        |
+| 🤫 **Rahasia**               | Identitas (`voted`) dan isi suara (`ballots`) disimpan terpisah tanpa penghubung, tanpa timestamp, tanpa urutan.                |
+| 🔍 **Bisa diverifikasi**     | Setiap pemilih mendapat kode tanda terima acak. Setelah ditutup, daftar `kode → calon` dipublikasikan untuk dicek dan dihitung. |
+| 🔒 **Tidak bisa diubah**     | Surat suara, penanda sudah memilih, dan audit log tidak bisa diubah/dihapus. DPT, calon, dan jadwal terkunci saat dibuka.       |
 
-Deploy hanya lewat GitHub Actions ([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)), supaya
-versi yang berjalan selalu sama dengan commit yang tampil di footer situs:
+> [!IMPORTANT]
+> Aturan-aturan ini ditegakkan **di database** lewat trigger SQL, bukan hanya di kode aplikasi.
+> Lihat [`migrations/0001_init.sql`](migrations/0001_init.sql) dan tesnya di
+> [`src/lib/server/db/schema.spec.ts`](src/lib/server/db/schema.spec.ts).
 
-- **Production**: push tag `v*`, misalnya `git tag v1.0.0 && git push origin v1.0.0`.
-- **Staging**: jalankan workflow _Deploy_ secara manual dari tab Actions (atau `pnpm deploy:staging`).
-  Staging memakai database terpisah dan tersedia di `https://staging.pemira-pmk-itera.pages.dev`.
+## 🗳️ Cara kerja
 
-## Verifikasi hasil
+```mermaid
+sequenceDiagram
+    actor P as Pemilih
+    participant S as Situs (SvelteKit)
+    participant DB as Database (D1)
+
+    P->>S: Login Google (@student.itera.ac.id)
+    S->>DB: Terdaftar di DPT? Sudah memilih?
+    P->>S: Pilih calon + konfirmasi
+    S->>DB: Satu transaksi: catat "sudah memilih" (email)<br/>+ surat suara (kode acak → calon), tanpa penghubung
+    S-->>P: Kode tanda terima, mis. 7KQ2M-X9D4P (hanya sekali)
+    Note over S,DB: Setelah ditutup
+    S-->>P: Rekap + daftar semua kode → calon (CSV + SHA-256)
+    P->>S: Cek kode sendiri di halaman Hasil
+```
+
+Tabel `voted` hanya tahu **siapa** yang sudah memilih. Tabel `ballots` hanya tahu **kode → calon**. Tidak ada
+kolom, waktu, atau urutan yang menghubungkan keduanya.
+
+## 🔍 Verifikasi hasil
 
 Setelah pemungutan suara ditutup, halaman `/hasil` menampilkan perolehan suara, pencarian kode tanda terima,
 dan berkas CSV berisi semua surat suara (`kode,nomor_calon`) beserta hash SHA-256-nya. Siapa pun bisa:
 
-1. Mengunduh CSV dan mencocokkan hash-nya: `shasum -a 256 surat-suara-pemira-pmk-itera-2027.csv`.
-2. Menghitung ulang perolehan suara dari CSV tersebut.
-3. Memastikan kode tanda terimanya sendiri ada di daftar dengan nomor calon yang benar.
+1. **Mencocokkan hash** berkas CSV:
+   ```sh
+   shasum -a 256 surat-suara-pemira-pmk-itera-2027.csv        # macOS / Linux
+   certutil -hashfile surat-suara-pemira-pmk-itera-2027.csv SHA256   # Windows
+   ```
+2. **Menghitung ulang** perolehan suara dari CSV tersebut.
+3. **Memastikan kode tanda terimanya sendiri** ada di daftar dengan nomor calon yang benar.
+4. **Mencocokkan versi**: commit yang tampil di footer situs bisa dibandingkan dengan kode di repo ini.
 
-## Batasan yang diketahui
+## ⚠️ Batasan yang diketahui
 
 Kami mencantumkan batasan sistem secara terbuka:
 
@@ -49,13 +81,18 @@ Kami mencantumkan batasan sistem secara terbuka:
 - **Kode tanda terima** bisa dipakai pemilih untuk menunjukkan pilihannya kepada orang lain. Meminta kode
   tanda terima orang lain dilarang oleh tata tertib.
 
-## Teknologi
+## 📋 Untuk panitia
 
-- [SvelteKit](https://svelte.dev/docs/kit) di [Cloudflare Pages](https://developers.cloudflare.com/pages/) (dipilih karena mendukung subdomain lewat CNAME di DNS luar)
-- [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite) sebagai database
-- [Firebase Authentication](https://firebase.google.com/docs/auth) untuk login Google; token diverifikasi di server dengan [jose](https://github.com/panva/jose)
+Langkah persiapan, simulasi, hari pemilihan, dan rekapitulasi ada di
+[`docs/panduan-panitia.md`](docs/panduan-panitia.md).
 
-## Menjalankan lokal
+## 🛠️ Untuk developer
+
+Arsitektur, aturan yang wajib dijaga (terutama kerahasiaan suara), lingkungan, dan alur kerja ada di
+[`docs/developer.md`](docs/developer.md).
+
+<details>
+<summary><b>Menjalankan lokal</b></summary>
 
 Prasyarat: Node.js 22.13+ (untuk `node:sqlite` di tes) dan [pnpm](https://pnpm.io).
 
@@ -67,7 +104,10 @@ pnpm db:seed:local               # opsional: data contoh (fiktif) dan buka jende
 pnpm dev
 ```
 
-## Perintah
+</details>
+
+<details>
+<summary><b>Perintah</b></summary>
 
 | Perintah                | Fungsi                                                             |
 | ----------------------- | ------------------------------------------------------------------ |
@@ -82,17 +122,50 @@ pnpm dev
 | `pnpm db:seed:local`    | Isi database lokal dengan data contoh                              |
 | `pnpm db:reset:staging` | Kosongkan database **staging** (untuk simulasi). Bukan production. |
 
-## Struktur
+</details>
+
+<details>
+<summary><b>Struktur</b></summary>
 
 ```
 migrations/          Skema D1 + aturan (trigger) pemilihan
 scripts/seed-dev.sql Data contoh untuk pengembangan lokal
 src/lib/server/      Kode yang hanya berjalan di server (akses database, logika pemilihan)
 src/routes/          Halaman: beranda, /masuk, /pilih (surat suara), /hasil, /admin, /keluar
+docs/                Panduan panitia dan developer
 wrangler.jsonc       Konfigurasi Cloudflare Pages dan binding D1 (production & preview)
 ```
 
-## Data pribadi dan secret
+</details>
 
-Repo ini publik. **Jangan pernah meng-commit** daftar pemilih (DPT), file `.dev.vars`, atau kredensial apa pun.
-DPT diimpor langsung ke D1 oleh panitia; secret diatur dengan `wrangler secret put`.
+### Deploy
+
+Deploy hanya lewat GitHub Actions ([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)), supaya
+versi yang berjalan selalu sama dengan commit yang tampil di footer situs:
+
+- **Production**: push tag `v*`, misalnya `git tag v1.0.0 && git push origin v1.0.0`.
+- **Staging**: jalankan workflow _Deploy_ secara manual dari tab Actions (atau `pnpm deploy:staging`).
+  Staging memakai database terpisah dan tersedia di `https://staging.pemira-pmk-itera.pages.dev`.
+
+### Teknologi
+
+- [SvelteKit](https://svelte.dev/docs/kit) di [Cloudflare Pages](https://developers.cloudflare.com/pages/)
+  (dipilih karena mendukung subdomain lewat CNAME di DNS luar)
+- [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite) sebagai database
+- [Firebase Authentication](https://firebase.google.com/docs/auth) untuk login Google; token diverifikasi
+  di server dengan [jose](https://github.com/panva/jose)
+
+## 🔐 Data pribadi dan secret
+
+> [!CAUTION]
+> Repo ini publik. **Jangan pernah meng-commit** daftar pemilih (DPT), file `.dev.vars`, atau kredensial
+> apa pun. DPT diimpor langsung ke D1 oleh panitia; secret diatur dengan `wrangler pages secret put`.
+
+Menemukan celah keamanan? Laporkan secara pribadi kepada pengurus PMK ITERA atau pembina, jangan lewat
+issue publik, supaya bisa diperbaiki sebelum diketahui luas.
+
+---
+
+<div align="center">
+<sub>Dibuat oleh dan untuk Persekutuan Mahasiswa Kristen ITERA.</sub>
+</div>
