@@ -60,19 +60,20 @@ kolom, waktu, atau urutan yang menghubungkan keduanya.
 
 ## 👥 Siapa bisa apa
 
-| Peran                                  | Bisa                                                                                                  | Tidak bisa                                                  |
-| -------------------------------------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| **Publik**                             | Melihat calon, jadwal, dan angka partisipasi. Setelah ditutup: hasil, daftar surat suara, cek kode.   | Melihat hasil sebelum pemungutan suara ditutup.             |
-| **Pemilih** (NIM terdaftar di DPT)     | Memilih satu kali dan menerima kode tanda terima.                                                     | Memilih dua kali atau mengubah pilihan.                     |
-| **Admin** (diundang super admin)       | Mengatur jadwal, calon dan foto, serta DPT sebelum pemungutan suara dibuka; tutup darurat; audit log. | Melihat pilihan siapa pun, mengubah suara, membuka kembali. |
-| **Super admin** (`SUPER_ADMIN_EMAILS`) | Semua yang bisa dilakukan admin, ditambah mengundang dan mencabut admin.                              | Sama dengan admin.                                          |
+| Peran                                  | Bisa                                                                                                  | Tidak bisa                                                                                                                 |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **Publik**                             | Melihat calon, jadwal, dan angka partisipasi. Setelah ditutup: hasil, daftar surat suara, cek kode.   | Melihat hasil sebelum pemungutan suara ditutup.                                                                            |
+| **Pemilih** (NIM terdaftar di DPT)     | Memilih satu kali dan menerima kode tanda terima.                                                     | Memilih dua kali atau mengubah pilihan.                                                                                    |
+| **Admin** (diundang super admin)       | Mengatur jadwal, calon dan foto, serta DPT sebelum pemungutan suara dibuka; tutup darurat; audit log. | Melihat pilihan siapa pun, melihat siapa yang sudah atau belum memilih (hanya jumlahnya), mengubah suara, membuka kembali. |
+| **Super admin** (`SUPER_ADMIN_EMAILS`) | Semua yang bisa dilakukan admin, ditambah mengundang dan mencabut admin.                              | Sama dengan admin.                                                                                                         |
 
 Semua tindakan admin tercatat di audit log yang tidak bisa diubah atau dihapus.
 
 ## 🔍 Verifikasi hasil
 
 Setelah pemungutan suara ditutup, halaman `/hasil` menampilkan perolehan suara, pencarian kode tanda terima,
-dan berkas CSV berisi semua surat suara (`kode,nomor_calon`) beserta hash SHA-256-nya. Siapa pun bisa:
+dan berkas CSV berisi semua surat suara (`kode,nomor_calon`) beserta hash SHA-256-nya. Pemilih tidak wajib
+memeriksa apa pun; langkah berikut disediakan untuk saat ada sengketa hasil. Siapa pun bisa:
 
 1. **Mencocokkan hash** berkas CSV:
    ```sh
@@ -98,6 +99,9 @@ Kami mencantumkan batasan sistem secara terbuka:
   akunnya. Hal ini diatur lewat tata tertib panitia.
 - **Kode tanda terima** bisa dipakai pemilih untuk menunjukkan pilihannya kepada orang lain. Meminta kode
   tanda terima orang lain dilarang oleh tata tertib.
+- **Siapa yang sudah memilih** tidak ditampilkan di web, termasuk kepada admin. Orang yang memegang akses
+  langsung ke database (pengelola akun Cloudflare) masih bisa melihat NIM yang sudah memilih, tetapi tidak
+  pilihannya, karena surat suara disimpan terpisah tanpa NIM.
 
 ## 📋 Untuk panitia
 

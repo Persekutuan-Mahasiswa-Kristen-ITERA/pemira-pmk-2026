@@ -36,8 +36,8 @@
 			<p class="eyebrow">Suara tercatat</p>
 			<h1>Terima kasih sudah <em>memilih.</em></h1>
 			<p class="lead">
-				Simpan kode tanda terima di bawah ini. Setelah pemungutan suara ditutup, panitia akan
-				memublikasikan daftar semua kode, dan kamu bisa memastikan suaramu tercatat dengan benar.
+				Kamu tidak perlu melakukan apa-apa lagi. Simpan saja kode di bawah ini: setelah pemungutan
+				suara ditutup semua kode diumumkan, dan kode ini berguna jika nanti ada sengketa hasil.
 			</p>
 		</header>
 

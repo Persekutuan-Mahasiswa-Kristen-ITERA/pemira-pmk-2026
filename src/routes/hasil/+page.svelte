@@ -118,7 +118,10 @@
 		<div class="split">
 			<section class="lookup-card" aria-labelledby="periksa">
 				<h2 id="periksa">Periksa <em>suaramu</em></h2>
-				<p class="muted">Ketik kode tanda terima yang kamu simpan saat memilih.</p>
+				<p class="muted">
+					Tidak wajib. Ketik kode tanda terima yang kamu simpan jika ingin memastikan suaramu
+					tercatat, misalnya saat ada sengketa.
+				</p>
 				<label class="lookup">
 					<span>Kode tanda terima</span>
 					<input

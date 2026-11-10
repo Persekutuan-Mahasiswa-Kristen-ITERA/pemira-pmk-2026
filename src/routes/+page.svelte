@@ -23,14 +23,14 @@
 		},
 		{
 			title: 'Simpan kode tanda terima',
-			body: 'Kode acak ini hanya kamu yang tahu. Gunakan untuk memastikan suaramu tercatat saat hasil diumumkan.'
+			body: 'Kode acak ini hanya kamu yang tahu. Tidak wajib dipakai, hanya berguna jika nanti ada sengketa hasil.'
 		}
 	];
 
 	const guarantees = [
 		{
 			title: 'Pilihanmu rahasia',
-			body: 'Surat suara disimpan tanpa nama, NIM, atau waktu memilih, terpisah dari daftar siapa yang sudah memilih.'
+			body: 'Surat suara disimpan tanpa nama, NIM, atau waktu memilih. Panitia pun tidak bisa melihat dari web siapa yang sudah atau belum memilih, hanya jumlahnya.'
 		},
 		{
 			title: 'Satu NIM, satu suara',
@@ -38,7 +38,7 @@
 		},
 		{
 			title: 'Bisa diperiksa siapa saja',
-			body: 'Setelah ditutup, semua surat suara diumumkan dengan kode acak. Cocokkan kode tanda terimamu, atau hitung ulang sendiri.'
+			body: 'Setelah ditutup, semua surat suara diumumkan dengan kode acak. Kamu tidak wajib memeriksanya; jika ada sengketa, siapa pun bisa mencocokkan kode atau menghitung ulang sendiri.'
 		}
 	];
 </script>
