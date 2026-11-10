@@ -44,7 +44,10 @@
 			</div>
 		</div>
 	{/if}
-	<div class="container topbar-inner" class:crowded={data.isAdmin && data.userEmail}>
+	<div
+		class="container topbar-inner"
+		class:crowded={(data.isAdmin || data.isOfficer) && data.userEmail}
+	>
 		<a class="brand" href={resolve('/')} aria-label="Pemira PMK ITERA, beranda">
 			<Seal size={42} />
 			<span class="brand-text">
@@ -55,6 +58,11 @@
 
 		<nav class="nav" aria-label="Navigasi utama">
 			<a href={resolve('/hasil')} aria-current={path === '/hasil' ? 'page' : undefined}>Hasil</a>
+			{#if data.isOfficer}
+				<a href={resolve('/petugas')} aria-current={path === '/petugas' ? 'page' : undefined}
+					>Petugas</a
+				>
+			{/if}
 			{#if data.isAdmin}
 				<a href={resolve('/admin')} aria-current={path.startsWith('/admin') ? 'page' : undefined}
 					>Admin</a

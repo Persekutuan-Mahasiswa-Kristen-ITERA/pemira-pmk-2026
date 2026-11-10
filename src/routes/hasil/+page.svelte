@@ -166,6 +166,27 @@
 				</p>
 			</section>
 		</div>
+
+		<section class="block exceptions" aria-labelledby="pengecualian">
+			<h2 id="pengecualian">Masuk tanpa <em>Google</em></h2>
+			{#if results.exceptionNims.length === 0}
+				<p class="muted">
+					Tidak ada pemilih yang masuk dengan kode pengecualian. Semua pemilih masuk dengan akun
+					Google mahasiswanya sendiri.
+				</p>
+			{:else}
+				<p class="muted">
+					NIM berikut tidak bisa masuk dengan Google, sehingga masuk dengan kode sekali pakai yang
+					disetujui dua admin di TPS. Pilihannya tetap rahasia. Jika NIM-mu ada di sini padahal kamu
+					tidak pernah memakai jalur ini, laporkan ke panitia dan saksi.
+				</p>
+				<ul class="nim-list">
+					{#each results.exceptionNims as nim (nim)}
+						<li class="mono">{nim}</li>
+					{/each}
+				</ul>
+			{/if}
+		</section>
 	{/if}
 </section>
 
@@ -439,6 +460,31 @@
 	}
 
 	.lookup-card,
+	.exceptions {
+		max-width: 760px;
+	}
+
+	.exceptions .muted {
+		margin-top: 12px;
+	}
+
+	.nim-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		margin: 16px 0 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.nim-list li {
+		padding: 4px 12px;
+		border-radius: 999px;
+		background: var(--paper-light);
+		box-shadow: inset 0 0 0 1px var(--line);
+		font-size: 14px;
+	}
+
 	.audit {
 		display: grid;
 		align-content: start;

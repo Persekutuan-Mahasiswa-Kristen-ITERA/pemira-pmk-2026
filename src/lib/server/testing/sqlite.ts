@@ -65,3 +65,12 @@ export function asD1(db: DatabaseSync): D1Database {
 	};
 	return d1 as unknown as D1Database;
 }
+
+/** Beri izin memilih (seperti setelah kode TPS diterima) supaya tes bisa menyimpan suara. */
+export function grantPass(db: DatabaseSync, nim: string, seconds = 300) {
+	db.prepare(
+		`INSERT INTO vote_passes (nim, session_hash, via, expires_at)
+		 VALUES (?1, lower(hex(randomblob(32))), 'tps', unixepoch() + ?2)
+		 ON CONFLICT (nim) DO UPDATE SET expires_at = excluded.expires_at`
+	).run(nim, seconds);
+}

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { applyAction, enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import BallotHead from '#lib/components/BallotHead.svelte';
 	import Guilloche from '#lib/components/Guilloche.svelte';
@@ -14,6 +15,50 @@
 	let copied = $state(false);
 
 	let selected = $derived(data.candidates.find((c) => c.id === selectedId) ?? null);
+	let who = $derived(data.email ?? `NIM ${data.nim}`);
+
+	/** Detik sebelum keluar otomatis setelah suara masuk. */
+	const LOGOUT_AFTER = 20;
+
+	let now = $state(Date.now());
+	$effect(() => {
+		const timer = setInterval(() => (now = Date.now()), 250);
+		return () => clearInterval(timer);
+	});
+
+	// Batas waktu dihitung dari selisih waktu server, supaya jam HP yang meleset tidak berpengaruh.
+	let passDeadline = $derived(
+		data.passExpiresAt === null ? null : Date.now() + (data.passExpiresAt - data.serverNow) * 1000
+	);
+	let passLeft = $derived(
+		passDeadline === null ? null : Math.max(0, Math.ceil((passDeadline - now) / 1000))
+	);
+	let refreshing = false;
+	$effect(() => {
+		if (passLeft === 0 && !form?.receiptCode && !refreshing) {
+			refreshing = true;
+			invalidateAll().finally(() => (refreshing = false));
+		}
+	});
+
+	let receiptShownAt = $derived(form?.receiptCode ? Date.now() : null);
+	let logoutLeft = $derived(
+		receiptShownAt === null
+			? null
+			: Math.max(0, LOGOUT_AFTER - Math.floor((now - receiptShownAt) / 1000))
+	);
+	let logoutForm = $state<HTMLFormElement>();
+	let loggingOut = false;
+	$effect(() => {
+		if (logoutLeft === 0 && logoutForm && !loggingOut) {
+			loggingOut = true;
+			logoutForm.requestSubmit();
+		}
+	});
+
+	function clock(seconds: number): string {
+		return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+	}
 
 	async function copyCode(code: string) {
 		try {
@@ -60,9 +105,22 @@
 			</div>
 		</div>
 
-		<ul class="notes rise" style:--i="2">
+		<form
+			class="logout rise"
+			style:--i="2"
+			method="POST"
+			action={resolve('/keluar')}
+			bind:this={logoutForm}
+		>
+			<p class="logout-text" aria-live="polite">
+				Kamu akan keluar otomatis dalam <strong class="mono">{logoutLeft ?? LOGOUT_AFTER}</strong> detik.
+			</p>
+			<button class="button button-ghost" type="submit">Selesai, keluar sekarang</button>
+		</form>
+
+		<ul class="notes rise" style:--i="3">
 			<li>
-				<strong>Kode ini hanya ditampilkan sekali.</strong> Catat atau ambil tangkapan layar sekarang.
+				<strong>Kode ini hanya ditampilkan sekali.</strong> Salin, catat, atau ambil tangkapan layar sekarang.
 				Kode tidak disimpan bersama identitasmu, sehingga tidak bisa ditampilkan ulang.
 			</li>
 			<li>
@@ -94,7 +152,7 @@
 			<p class="eyebrow">Surat suara</p>
 			<h1>Kamu tidak terdaftar di <em>DPT.</em></h1>
 			<p class="lead">
-				Kamu masuk sebagai <strong>{data.email}</strong>.
+				Kamu masuk sebagai <strong>{who}</strong>.
 				{#if data.nim}
 					NIM <strong class="mono">{data.nim}</strong> tidak ada di daftar pemilih.
 				{:else}
@@ -116,22 +174,62 @@
 				Buka halaman hasil <span class="arrow" aria-hidden="true">→</span>
 			</a>
 		</header>
+	{:else if passLeft === null}
+		<header class="page-head rise">
+			<p class="eyebrow">Di TPS</p>
+			<h1>Minta <em>kode TPS</em> ke petugas.</h1>
+			<p class="lead">
+				Kamu masuk sebagai <strong>{who}</strong>. Tunjukkan KTM ke petugas. Petugas akan mengetik
+				kode sekali pakai di sini, lalu kamu punya waktu 5 menit untuk memilih di bilik.
+			</p>
+		</header>
+
+		<form class="unlock rise" style:--i="1" method="POST" action="?/unlock" use:enhance>
+			<label class="unlock-label" for="booth-code">Kode TPS</label>
+			<div class="unlock-row">
+				<input
+					class="code-input"
+					id="booth-code"
+					name="code"
+					required
+					autocomplete="off"
+					autocapitalize="characters"
+					spellcheck="false"
+					placeholder="XXX-XXX"
+					maxlength="10"
+				/>
+				<button class="button button-gold" type="submit">
+					Buka surat suara <span class="arrow" aria-hidden="true">→</span>
+				</button>
+			</div>
+			{#if form?.unlockError ?? form?.error}
+				<p class="msg msg-error" role="alert">{form?.unlockError ?? form?.error}</p>
+			{/if}
+			<p class="unlock-hint">Kode berlaku 2 menit sejak dibuat dan hanya bisa dipakai sekali.</p>
+		</form>
 	{:else}
 		<header class="page-head rise">
 			<p class="eyebrow">Surat suara</p>
 			<h1>Coblos satu <em>calon ketua.</em></h1>
 			<p class="lead">
-				Kamu masuk sebagai <strong>{data.email}</strong>. Pilihanmu rahasia dan tidak bisa diubah
-				setelah dikirim.
+				Kamu masuk sebagai <strong>{who}</strong>. Pilihanmu rahasia dan tidak bisa diubah setelah
+				dikirim.
+			</p>
+			<p class="timer" class:urgent={passLeft <= 60}>
+				Sisa waktu memilih <strong class="mono">{clock(passLeft)}</strong>
 			</p>
 		</header>
 
 		<form
 			method="POST"
+			action="?/vote"
 			use:enhance={() => {
 				submitting = true;
-				return async ({ update }) => {
-					await update();
+				return async ({ result, update }) => {
+					// Jangan muat ulang halaman setelah berhasil: izin dan (untuk jalur kode) sesinya
+					// sudah habis, sedangkan tanda terima harus tetap tampil.
+					if (result.type === 'success') await applyAction(result);
+					else await update();
 					submitting = false;
 					confirming = false;
 				};
@@ -551,6 +649,84 @@
 			opacity: 0;
 			transform: rotate(-8deg) scale(1.8);
 		}
+	}
+
+	/* Kode TPS */
+	.unlock {
+		display: grid;
+		gap: 12px;
+		max-width: 560px;
+		margin-top: 32px;
+		padding: clamp(20px, 4vw, 32px);
+		border-radius: var(--radius);
+		background: var(--paper-light);
+		box-shadow:
+			var(--shadow-soft),
+			inset 0 0 0 1px rgb(215 201 179 / 0.8);
+	}
+
+	.unlock-label {
+		font-size: 11px;
+		font-weight: 800;
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+		color: var(--ink-muted);
+	}
+
+	.unlock-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 12px;
+	}
+
+	.unlock-row input {
+		flex: 1 1 10ch;
+		min-width: 0;
+		font-size: 26px;
+	}
+
+	.unlock-hint {
+		font-size: 14px;
+		color: var(--ink-muted);
+	}
+
+	.unlock .msg {
+		margin: 0;
+	}
+
+	.timer {
+		display: inline-flex;
+		gap: 8px;
+		margin-top: 18px;
+		padding: 6px 14px;
+		border-radius: 999px;
+		background: var(--sand);
+		font-size: 14px;
+		color: var(--brown-dark);
+	}
+
+	.timer.urgent {
+		background: var(--brown-dark);
+		color: var(--gold-light);
+	}
+
+	/* Keluar otomatis setelah memilih */
+	.logout {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px 24px;
+		max-width: 760px;
+		margin-top: 24px;
+		padding: 14px 14px 14px 20px;
+		border-radius: var(--radius);
+		background: var(--sand);
+	}
+
+	.logout-text strong {
+		font-size: 18px;
+		color: var(--ink);
 	}
 
 	.notes {

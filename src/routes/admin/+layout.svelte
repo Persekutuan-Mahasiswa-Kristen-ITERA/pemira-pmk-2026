@@ -9,9 +9,14 @@
 		{ href: resolve('/admin'), label: 'Ringkasan & jadwal', hint: 'Status dan waktu pemilihan' },
 		{ href: resolve('/admin/calon'), label: 'Calon', hint: 'Nomor urut, foto, visi, misi' },
 		{ href: resolve('/admin/dpt'), label: 'DPT', hint: 'Daftar pemilih tetap' },
+		{
+			href: resolve('/admin/pengecualian'),
+			label: 'Kode pengecualian',
+			hint: 'Pemilih yang tidak bisa login Google'
+		},
 		{ href: resolve('/admin/audit'), label: 'Audit log', hint: 'Riwayat tindakan admin' },
 		...(data.isSuperAdmin
-			? [{ href: resolve('/admin/panitia'), label: 'Panitia', hint: 'Undang dan cabut admin' }]
+			? [{ href: resolve('/admin/panitia'), label: 'Panitia', hint: 'Admin dan Petugas TPS' }]
 			: [])
 	]);
 </script>

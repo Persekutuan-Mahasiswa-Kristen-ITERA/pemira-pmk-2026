@@ -8,18 +8,57 @@ yang ditandai **(developer)**.
 | Peran     | Tugas                                                                                |
 | --------- | ------------------------------------------------------------------------------------ |
 | Panitia   | Menyusun DPT, memasukkan calon, mengatur jadwal, mengumumkan hasil.                  |
+| Petugas   | Menjaga meja dan bilik TPS: cek KTM, absensi, membuat kode TPS.                      |
 | Saksi     | Perwakilan setiap calon. Menyaksikan simulasi, penguncian DPT, penutupan, dan rekap. |
 | Developer | Deploy aplikasi dan menjalankan perintah teknis. Tidak memegang keputusan pemilihan. |
 
-Ada dua peran admin aplikasi:
+Ada tiga peran di aplikasi:
 
 - **Super admin**: email di secret `SUPER_ADMIN_EMAILS` (diatur developer). Hanya super admin yang bisa
-  mengundang dan mencabut admin lewat menu **Panitia** di panel admin.
-- **Admin**: akun Google yang diundang super admin. Admin bisa mengelola jadwal, calon (termasuk foto), dan
-  DPT, tetapi tidak bisa mengundang admin lain.
+  mengundang dan mencabut admin serta Petugas TPS lewat menu **Panitia** di panel admin.
+- **Admin**: akun Google yang diundang super admin. Admin bisa mengelola jadwal, calon (termasuk foto), DPT,
+  dan kode pengecualian, tetapi tidak bisa mengundang admin lain.
+- **Petugas TPS**: akun Google yang diundang super admin. Petugas hanya bisa membuat kode TPS dan mengecek
+  apakah NIM ada di DPT, di halaman **Petugas**. Petugas tidak bisa membuka panel admin.
 
-Semua admin masuk lewat **Masuk → "Masuk dengan akun panitia"**. Undangan dan pencabutan tercatat di audit
-log, dan admin yang dicabut langsung kehilangan akses.
+Semua masuk lewat **Masuk → "Masuk dengan akun panitia"**. Undangan dan pencabutan tercatat di audit log, dan
+akun yang dicabut langsung kehilangan akses.
+
+## Memilih wajib di TPS
+
+Pemilih tidak bisa memilih dari rumah. Surat suara baru terbuka setelah petugas mengetik **kode TPS** di HP
+pemilih. Kode TPS sekali pakai, berlaku 2 menit, dan tidak dikaitkan ke NIM. Setelah kode diterima, pemilih
+punya 5 menit untuk memilih. Begitu suara masuk, pemilih keluar otomatis 20 detik kemudian.
+
+Alur di TPS:
+
+1. **Meja**: pemilih menunjukkan KTM. Petugas mencocokkannya dengan DPT (bisa lewat **Cek DPT** di halaman
+   Petugas) dan meminta tanda tangan absensi.
+2. **Area bilik**: pemilih membuka situs di HP-nya sendiri dan masuk dengan akun Google mahasiswanya.
+3. Petugas menekan **Buat kode** dan **mengetik kodenya sendiri** di HP pemilih. Jangan menuliskan kode di
+   kertas atau mengirimkannya lewat chat.
+4. Pemilih memilih sendirian di bilik, lalu menyimpan kode tanda terima (salin atau tangkapan layar).
+
+Pemilih tanpa HP memakai **laptop TPS**. Buka jendela **incognito/penyamaran baru** untuk setiap pemilih dan
+tutup setelah dia selesai. Jika tidak ditutup, akun Google pemilih sebelumnya masih terbuka di browser.
+
+Satu meja kira-kira melayani 30 pemilih per jam. Untuk 4.495 pemilih dalam satu hari, siapkan beberapa meja
+dan petugas sekaligus.
+
+### Pemilih yang tidak bisa masuk dengan Google
+
+Coba dulu: buka situs di Chrome/Safari (bukan dari dalam WhatsApp/Instagram), atau minta reset akun ke UPA
+TIK. Jika akunnya benar-benar tidak bisa dipakai:
+
+1. **Admin pertama → Kode pengecualian**: masukkan NIM (cocokkan nama yang muncul dengan KTM) dan alasannya.
+2. **Admin kedua**, dari perangkatnya sendiri, membuka halaman yang sama dan menekan **Setujui**. Kode
+   muncul sekali, berlaku 5 menit, dan sekali pakai. Admin yang mengajukan tidak bisa menyetujui
+   pengajuannya sendiri.
+3. Admin mengetik kode di perangkat pemilih: **Masuk → "Tidak bisa masuk dengan Google?"**.
+
+Semua langkah tercatat di audit log. Setelah pemilihan ditutup, daftar NIM yang memakai jalur ini muncul di
+halaman Hasil, tanpa pilihannya. Gunakan jalur ini hanya untuk pengecualian, dan tulis aturannya di tata
+tertib sebelum pemilihan.
 
 Foto calon diunggah di menu **Calon** (JPG, PNG, atau WebP; otomatis diperkecil). Seperti data calon
 lainnya, foto terkunci begitu pemilihan dibuka, jadi pastikan sudah final sebelum waktu buka.
@@ -32,8 +71,8 @@ lainnya, foto terkunci begitu pemilihan dibuka, jadi pastikan sudah final sebelu
 
 ### 1. Persiapan (± 2 minggu sebelum hari pemilihan)
 
-1. **Super admin → Panitia**: undang akun Google setiap panitia yang perlu mengelola situs. Kirim pesan
-   undangan yang muncul setelah mengundang.
+1. **Super admin → Panitia**: undang akun Google setiap panitia yang perlu mengelola situs, dan setiap
+   Petugas TPS. Kirim pesan undangan yang muncul setelah mengundang.
 2. **Susun DPT** dalam spreadsheet dengan kolom `nim` dan `nama`, lalu simpan sebagai CSV. Ekspor data
    kampus boleh langsung dipakai: kolom lain (email, prodi, angkatan, dst.) diabaikan dan tidak disimpan.
    Pemilih dicocokkan lewat NIM di email login `nama.nim@student.itera.ac.id`, jadi kolom email tidak wajib.
@@ -54,10 +93,14 @@ lainnya, foto terkunci begitu pemilihan dibuka, jadi pastikan sudah final sebelu
 1. **(developer)** Kosongkan database staging: `pnpm db:reset:staging`.
 2. Di situs staging (berpita **"Situs uji coba"**), panitia memasukkan DPT uji (berisi NIM panitia/saksi yang punya email mahasiswa), calon contoh, dan jadwal
    pendek (mis. 30 menit).
-3. Panitia dan saksi mencoba: login, memilih, menyimpan kode tanda terima, mencoba memilih dua kali (harus
-   ditolak), lalu memeriksa kode di halaman Hasil setelah ditutup.
-4. Uji juga **tutup darurat** di staging, supaya panitia tahu caranya.
-5. **(developer)** Kosongkan lagi database staging setelah simulasi.
+3. Panitia dan saksi mencoba alur TPS lengkap: petugas membuat kode TPS, pemilih login di HP sendiri dan
+   memilih, menyimpan kode tanda terima, mencoba memilih dua kali (harus ditolak), mencoba kode yang sudah
+   lewat 2 menit (harus ditolak), lalu memeriksa kode di halaman Hasil setelah ditutup. Coba juga jalur kode
+   pengecualian dengan dua admin.
+4. **Gladi login**: login 15–20 akun berturut-turut di laptop TPS, di jaringan kampus, untuk melihat apakah
+   Google meminta verifikasi tambahan. Beri tahu UPA TIK bahwa akan ada banyak login dari satu tempat.
+5. Uji juga **tutup darurat** di staging, supaya panitia tahu caranya.
+6. **(developer)** Kosongkan lagi database staging setelah simulasi.
 
 ### 3. Rilis versi final **(developer)**
 
@@ -71,9 +114,13 @@ lainnya, foto terkunci begitu pemilihan dibuka, jadi pastikan sudah final sebelu
 - Pemungutan suara dibuka otomatis sesuai jadwal. Pantau **Admin → Ringkasan**:
   - Jumlah "Sudah memilih" harus selalu sama dengan jumlah "Surat suara". Jika berbeda, muncul peringatan
     merah: hentikan dan periksa bersama saksi.
+  - **Rekonsiliasi TPS**: di akhir hari, cocokkan jumlah **kode TPS dipakai** dengan jumlah tanda tangan
+    absensi. Jumlah kode dipakai boleh sedikit lebih banyak dari jumlah yang sudah memilih (pemilih yang
+    waktunya habis memakai kode baru), tetapi tidak boleh lebih sedikit.
 - Ingatkan pemilih untuk **menyimpan kode tanda terima** dan **tidak memberikannya kepada siapa pun**.
-- Pemilih yang gagal login atau merasa seharusnya terdaftar: catat NIM, email, dan kendalanya. DPT tidak bisa
-  diubah lagi setelah pemungutan suara dibuka.
+- Pemilih yang gagal login: ikuti langkah **Pemilih yang tidak bisa masuk dengan Google** di atas. Pemilih yang
+  merasa seharusnya terdaftar: catat NIM, email, dan kendalanya. DPT tidak bisa diubah lagi setelah
+  pemungutan suara dibuka.
 - **Tutup darurat** (Admin → Ringkasan) hanya jika ada masalah serius, dengan persetujuan saksi. Alasan
   wajib diisi dan tercatat di audit log. Pemungutan suara tidak bisa dibuka kembali.
 
@@ -82,7 +129,8 @@ lainnya, foto terkunci begitu pemilihan dibuka, jadi pastikan sudah final sebelu
 1. Pemungutan suara tertutup otomatis sesuai jadwal.
 2. Buka halaman **Hasil**. Periksa bersama saksi:
    - perolehan suara setiap calon;
-   - tanda ✓ bahwa jumlah surat suara sama dengan jumlah pemilih yang sudah memilih.
+   - tanda ✓ bahwa jumlah surat suara sama dengan jumlah pemilih yang sudah memilih;
+   - daftar NIM yang masuk dengan kode pengecualian (jika ada).
 3. Unduh **daftar surat suara (CSV)** dan catat **SHA-256** yang tampil. Lampirkan keduanya pada berita
    acara.
 4. Umumkan hasil, tautan halaman Hasil, dan SHA-256. Buka **masa sanggah hasil**: pemilih dapat memeriksa
@@ -98,3 +146,5 @@ yang di-commit ke repo, sehingga penghapusannya juga tercatat. Surat suara anoni
 - Satu akun, satu suara. Dilarang meminjamkan atau meminjam akun email ITERA.
 - Dilarang meminta, membeli, atau memaksa orang lain menunjukkan kode tanda terimanya.
 - Kode tanda terima hanya ditampilkan sekali. Simpan baik-baik (catat atau tangkapan layar).
+- Memilih hanya di TPS dengan membawa KTM. Kode TPS diketik oleh petugas dan tidak boleh diteruskan.
+- Dilarang memotret layar orang lain di area bilik.

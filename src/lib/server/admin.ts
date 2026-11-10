@@ -20,6 +20,13 @@ export function requireSuperAdmin(locals: App.Locals): AuthUser {
 	return user;
 }
 
+/** Hanya Petugas TPS (diundang super admin), untuk halaman /petugas. */
+export function requireOfficer(locals: App.Locals): AuthUser {
+	if (!locals.user) redirect(303, '/masuk');
+	if (!locals.officer) error(403, 'Halaman ini khusus Petugas TPS.');
+	return locals.user;
+}
+
 /** Statement audit log, untuk dimasukkan ke batch yang sama dengan aksinya. */
 export function auditStatement(
 	db: D1Database,
@@ -40,6 +47,7 @@ export function describeDbError(err: unknown): string | null {
 			'Jadwal tidak bisa diubah: pemilihan sudah dibuka. Yang masih bisa dilakukan hanya tutup darurat.',
 		candidates_locked: 'Daftar calon terkunci karena pemilihan sudah dibuka.',
 		voters_locked: 'DPT terkunci karena pemilihan sudah dibuka.',
+		voting_closed: 'Pemungutan suara sedang tidak dibuka.',
 		'UNIQUE constraint failed: candidates.number': 'Nomor urut itu sudah dipakai calon lain.',
 		'FOREIGN KEY': 'Data ini masih dipakai oleh data lain sehingga tidak bisa dihapus.',
 		'CHECK constraint failed': 'Data tidak valid (misalnya waktu tutup harus setelah waktu buka).'

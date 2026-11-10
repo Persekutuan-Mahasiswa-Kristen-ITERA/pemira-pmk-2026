@@ -3,19 +3,23 @@ import { auditStatement, describeDbError, requireAdmin } from '#lib/server/admin
 import { getDb } from '#lib/server/db.js';
 import { getElectionStatus } from '#lib/server/election.js';
 import { getParticipation } from '#lib/server/results.js';
+import { boothCodeStats, usedExceptionNims } from '#lib/server/tps.js';
 import { unixToWibInput, wibInputToUnix } from '#lib/time.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	requireAdmin(locals);
 	const db = getDb();
-	const [election, participation] = await Promise.all([
+	const [election, participation, boothCodes, exceptionNims] = await Promise.all([
 		getElectionStatus(db),
-		getParticipation(db)
+		getParticipation(db),
+		boothCodeStats(db),
+		usedExceptionNims(db)
 	]);
 	return {
 		election,
 		participation,
+		tps: { boothCodes, exceptionsUsed: exceptionNims.length },
 		opensInput: unixToWibInput(election.opensAt),
 		closesInput: unixToWibInput(election.closesAt)
 	};

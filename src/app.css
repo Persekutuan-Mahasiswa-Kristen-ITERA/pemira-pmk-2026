@@ -317,3 +317,28 @@ code {
 			transparent calc(50% + 3px)
 		);
 }
+
+/* Kotak isian kode (kode TPS, kode pengecualian) */
+.code-input {
+	padding: 11px 14px;
+	border: 1.5px solid var(--line);
+	border-radius: var(--radius-sm);
+	background: #fff;
+	font: 600 20px var(--font-mono);
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--ink);
+	transition:
+		border-color 0.2s,
+		box-shadow 0.2s;
+}
+
+.code-input::placeholder {
+	color: var(--line);
+}
+
+.code-input:focus {
+	outline: none;
+	border-color: var(--gold);
+	box-shadow: 0 0 0 4px rgb(197 154 39 / 0.25);
+}

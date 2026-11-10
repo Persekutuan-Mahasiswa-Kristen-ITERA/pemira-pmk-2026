@@ -9,10 +9,14 @@
 	let copied = $state(false);
 
 	let inviteText = $derived(
-		form && 'invited' in form && form.invited
+		form?.invited
 			? `Kamu diundang menjadi panitia Pemira PMK ITERA 2027. Buka ${page.url.origin}/masuk, ` +
 					`pilih "Masuk dengan akun panitia", lalu masuk dengan akun Google ${form.invited}.`
-			: null
+			: form?.invitedOfficer
+				? `Kamu diundang menjadi Petugas TPS Pemira PMK ITERA 2027. Buka ${page.url.origin}/masuk, ` +
+					`pilih "Masuk dengan akun panitia", lalu masuk dengan akun Google ${form.invitedOfficer}. ` +
+					`Kamu akan langsung dibawa ke halaman Petugas untuk membuat kode TPS.`
+				: null
 	);
 
 	async function copyInvite(text: string) {
@@ -32,8 +36,9 @@
 
 <h1>Panitia</h1>
 <p class="hint intro">
-	Admin bisa mengelola jadwal, calon, dan DPT. Hanya super admin yang bisa mengundang atau mencabut
-	admin. Setiap undangan dan pencabutan tercatat di audit log.
+	Admin bisa mengelola jadwal, calon, DPT, dan kode pengecualian. Petugas TPS hanya bisa membuat
+	kode TPS di halaman Petugas. Hanya super admin yang bisa mengundang atau mencabut keduanya, dan
+	setiap undangan dan pencabutan tercatat di audit log.
 </p>
 
 {#if form?.error}<p class="msg-error" role="alert">{form.error}</p>{/if}
@@ -41,7 +46,7 @@
 
 {#if inviteText}
 	<div class="panel invite-note">
-		<p class="note-label">Kirim pesan ini ke admin baru</p>
+		<p class="note-label">Kirim pesan ini ke {form?.invitedOfficer ? 'petugas' : 'admin'} baru</p>
 		<p class="invite-text">{inviteText}</p>
 		<button class="button button-ghost" type="button" onclick={() => copyInvite(inviteText)}>
 			{copied ? 'Tersalin ✓' : 'Salin pesan'}
@@ -115,6 +120,58 @@
 		</tbody>
 	</table>
 </div>
+
+<h2>Petugas TPS</h2>
+<form method="POST" action="?/inviteOfficer" use:enhance class="panel invite">
+	<label class="field">
+		Email akun Google
+		<input
+			type="email"
+			name="email"
+			required
+			autocomplete="off"
+			placeholder="petugas@gmail.com"
+			spellcheck="false"
+		/>
+	</label>
+	<button class="button" type="submit">Undang petugas</button>
+	<p class="hint">
+		Petugas hanya bisa membuat kode TPS dan mengecek DPT. Mereka tidak bisa membuka panel admin.
+	</p>
+</form>
+
+{#if data.officers.length > 0}
+	<div class="scroll">
+		<table>
+			<thead>
+				<tr><th>Email</th><th>Status</th><th><span class="visually-hidden">Aksi</span></th></tr>
+			</thead>
+			<tbody>
+				{#each data.officers as o (o.email)}
+					<tr>
+						<td class="email">{o.email}</td>
+						<td class="status">
+							Diundang {o.invitedBy} · {formatWib(o.invitedAt)}<br />
+							{o.lastLoginAt ? `Terakhir masuk ${formatWib(o.lastLoginAt)}` : 'Belum pernah masuk'}
+						</td>
+						<td class="actions">
+							<form
+								method="POST"
+								action="?/revokeOfficer"
+								use:enhance={({ cancel }) => {
+									if (!confirm(`Cabut akses Petugas TPS ${o.email}?`)) cancel();
+								}}
+							>
+								<input type="hidden" name="email" value={o.email} />
+								<button class="revoke" type="submit">Cabut</button>
+							</form>
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
+{/if}
 
 <style>
 	.intro {

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { DatabaseSync } from 'node:sqlite';
-import { asD1, freshDb } from './testing/sqlite';
+import { asD1, freshDb, grantPass } from './testing/sqlite';
 import { castVote } from './vote';
 import { ballotsCsv, getParticipation, getTally, publishedBallots } from './results';
 
@@ -18,6 +18,7 @@ beforeEach(async () => {
 	raw.exec(
 		'UPDATE election_config SET opens_at = unixepoch() - 60, closes_at = unixepoch() + 3600'
 	);
+	for (const nim of ['100000001', '100000002', '100000003']) grantPass(raw, nim);
 	await castVote(db, '100000001', 2, () => 'CCCCC-CCCCC');
 	await castVote(db, '100000002', 1, () => 'AAAAA-AAAAA');
 	await castVote(db, '100000003', 2, () => 'BBBBB-BBBBB');

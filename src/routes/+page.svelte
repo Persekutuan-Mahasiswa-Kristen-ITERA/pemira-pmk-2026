@@ -14,23 +14,27 @@
 
 	const steps = [
 		{
+			title: 'Datang ke TPS dengan KTM',
+			body: 'Petugas mencocokkan KTM-mu dengan DPT. Bawa HP; jika tidak ada, tersedia laptop di TPS.'
+		},
+		{
 			title: 'Masuk dengan email ITERA',
-			body: 'Gunakan akun Google nama.nim@student.itera.ac.id. NIM-mu harus terdaftar di DPT.'
+			body: 'Di area bilik, masuk dengan akun Google nama.nim@student.itera.ac.id. Petugas lalu mengetik kode TPS sekali pakai.'
 		},
 		{
 			title: 'Coblos satu calon',
-			body: 'Baca visi dan misi, pilih satu calon, lalu konfirmasi pilihanmu.'
+			body: 'Kamu punya 5 menit. Baca visi dan misi, pilih satu calon, lalu konfirmasi pilihanmu.'
 		},
 		{
 			title: 'Simpan kode tanda terima',
-			body: 'Kode acak ini hanya kamu yang tahu. Tidak wajib dipakai, hanya berguna jika nanti ada sengketa hasil.'
+			body: 'Kode acak ini hanya kamu yang tahu. Tidak wajib dipakai, hanya berguna jika nanti ada sengketa hasil. Kamu keluar otomatis 20 detik kemudian.'
 		}
 	];
 
 	const guarantees = [
 		{
 			title: 'Pilihanmu rahasia',
-			body: 'Surat suara disimpan tanpa nama, NIM, atau waktu memilih. Panitia pun tidak bisa melihat dari web siapa yang sudah atau belum memilih, hanya jumlahnya.'
+			body: 'Surat suara disimpan tanpa nama, NIM, atau waktu memilih, dan kode TPS tidak dikaitkan ke NIM. Di web, panitia hanya melihat jumlah pemilih. Kehadiranmu tercatat di absensi TPS, seperti pemilu biasa.'
 		},
 		{
 			title: 'Satu NIM, satu suara',
@@ -158,7 +162,7 @@
 <section class="steps-band" id="cara" aria-labelledby="cara-judul">
 	<div class="container">
 		<div class="band-head">
-			<p class="eyebrow">Tiga langkah</p>
+			<p class="eyebrow">Empat langkah</p>
 			<h2 id="cara-judul">Cara <em>memilih</em></h2>
 		</div>
 		<ol class="steps">
@@ -469,8 +473,8 @@
 
 	.steps {
 		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 40px;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 32px;
 		margin: 56px 0 0;
 		padding: 0;
 		list-style: none;
@@ -551,6 +555,16 @@
 	.guarantees p {
 		font-size: 15px;
 		color: var(--ink-soft);
+	}
+
+	@media (max-width: 1100px) and (min-width: 901px) {
+		.steps {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.steps li:nth-child(2)::after {
+			display: none;
+		}
 	}
 
 	@media (max-width: 900px) {

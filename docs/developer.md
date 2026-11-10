@@ -27,12 +27,20 @@ Browser ──► Cloudflare Pages (SvelteKit, server-side) ──► Cloudflare
   sign out dari Firebase (persistence di memori saja). Token dikirim ke action `/masuk`, diverifikasi, dan
   disimpan di cookie httpOnly `pemira_session`. Setiap request, `src/hooks.server.ts` memverifikasi ulang
   cookie itu menjadi `locals.user`. Sesi berakhir saat token kedaluwarsa (maks. 1 jam).
-- **Siapa boleh masuk**: email `@student.itera.ac.id`, atau admin. Masuk bukan berarti boleh memilih: hak
+- **Siapa boleh masuk**: email `@student.itera.ac.id`, admin, atau Petugas TPS. Masuk bukan berarti boleh memilih: hak
   pilih ditentukan tabel `voters` (DPT).
 - **Peran admin** (`locals.role`, dihitung ulang tiap request di `src/hooks.server.ts`): `super` untuk email
   di secret `SUPER_ADMIN_EMAILS`, `admin` untuk email di tabel `admins` (diundang super admin lewat
   `/admin/panitia`). Pakai `requireAdmin(locals)` atau `requireSuperAdmin(locals)` dari
-  `src/lib/server/admin.ts`.
+  `src/lib/server/admin.ts`. **Petugas TPS** (`locals.officer`, tabel `officers`) hanya boleh membuka
+  `/petugas`; pakai `requireOfficer(locals)`. Petugas bukan admin: `requireAdmin` menolaknya.
+- **Wajib di TPS** (`migrations/0004_tps.sql`, `src/lib/server/tps.ts`): trigger di `voted` menolak suara
+  tanpa baris `vote_passes` yang masih berlaku untuk NIM itu, dan menghapus baris itu begitu suara masuk.
+  Izin dibuat dengan menukar **kode TPS** (`booth_codes`, sekali pakai, 2 menit, tidak terkait NIM) di action
+  `/pilih?/unlock`, atau **kode pengecualian** (`exception_codes`, terikat NIM, dua admin berbeda, 5 menit)
+  di action `/masuk?/code`. Token acak izin disimpan di cookie httpOnly `pemira_pass` (yang disimpan di
+  database hanya hash-nya) dan dibaca di hooks menjadi `locals.pass`. Untuk jalur pengecualian, `locals.pass`
+  sekaligus menjadi identitas pemilih (tanpa `locals.user`). Kode hanya disimpan sebagai SHA-256.
 - **Foto calon** disimpan di tabel `candidate_photos` (BLOB, maks. 1 MB, diperkecil di browser oleh
   `src/lib/resize-image.ts`) dan disajikan publik di `/foto-calon/[id]`. Jenis berkas diperiksa dari isinya
   (`sniffImageType`), bukan dari nama berkas; SVG ditolak.
@@ -49,27 +57,29 @@ Browser ──► Cloudflare Pages (SvelteKit, server-side) ──► Cloudflare
 
 ## Peta kode
 
-| Lokasi                         | Isi                                                                                              |
-| ------------------------------ | ------------------------------------------------------------------------------------------------ |
-| `migrations/`                  | Skema dan **aturan pemilihan** (trigger): 0001 dasar, 0002 DPT berbasis NIM, 0003 admin dan foto |
-| `src/lib/server/vote.ts`       | Status pemilih dan pencatatan suara (`castVote`)                                                 |
-| `src/lib/server/auth.ts`       | Verifikasi Firebase ID token                                                                     |
-| `src/lib/server/access.ts`     | Aturan domain email, NIM dari email, dan admin                                                   |
-| `src/lib/server/admin.ts`      | `requireAdmin`, `requireSuperAdmin`, pencatatan audit log                                        |
-| `src/lib/server/admins.ts`     | Peran admin (super admin dari secret, admin undangan dari tabel)                                 |
-| `src/lib/server/photos.ts`     | Validasi foto calon                                                                              |
-| `src/lib/server/candidates.ts` | URL foto per calon                                                                               |
-| `src/lib/resize-image.ts`      | Memperkecil foto di browser sebelum diunggah                                                     |
-| `src/lib/components/`          | Komponen tampilan bersama (lihat [Tampilan](#tampilan))                                          |
-| `src/routes/+layout.*`         | Header, footer, pita "uji coba", dan label database                                              |
-| `src/routes/foto-calon/`       | Foto calon (publik, cache panjang lewat URL berversi)                                            |
-| `src/lib/server/results.ts`    | Rekap, daftar surat suara, CSV + SHA-256                                                         |
-| `src/lib/server/dpt.ts`        | Parser CSV DPT dan sidik jari DPT                                                                |
-| `src/lib/server/testing/`      | SQLite di memori (`node:sqlite`) dengan shim D1 untuk tes                                        |
-| `src/routes/pilih/`            | Surat suara; kode tanda terima hanya ditampilkan sekali                                          |
-| `src/routes/hasil/`            | Hasil, pencarian kode, unduhan CSV (404 sebelum pemungutan suara ditutup)                        |
-| `src/routes/admin/`            | Ringkasan & jadwal, tutup darurat, calon + foto, DPT, audit log, panitia (super admin)           |
-| `.github/workflows/`           | CI (lint, check, test, build) dan deploy                                                         |
+| Lokasi                         | Isi                                                                                                                          |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `migrations/`                  | Skema dan **aturan pemilihan** (trigger): 0001 dasar, 0002 DPT berbasis NIM, 0003 admin dan foto, 0004 TPS                   |
+| `src/lib/server/vote.ts`       | Status pemilih dan pencatatan suara (`castVote`)                                                                             |
+| `src/lib/server/tps.ts`        | Kode TPS, kode pengecualian, izin memilih, penghitung rekonsiliasi                                                           |
+| `src/lib/server/auth.ts`       | Verifikasi Firebase ID token                                                                                                 |
+| `src/lib/server/access.ts`     | Aturan domain email, NIM dari email, dan admin                                                                               |
+| `src/lib/server/admin.ts`      | `requireAdmin`, `requireSuperAdmin`, pencatatan audit log                                                                    |
+| `src/lib/server/admins.ts`     | Peran admin (super admin dari secret, admin undangan dari tabel)                                                             |
+| `src/lib/server/photos.ts`     | Validasi foto calon                                                                                                          |
+| `src/lib/server/candidates.ts` | URL foto per calon                                                                                                           |
+| `src/lib/resize-image.ts`      | Memperkecil foto di browser sebelum diunggah                                                                                 |
+| `src/lib/components/`          | Komponen tampilan bersama (lihat [Tampilan](#tampilan))                                                                      |
+| `src/routes/+layout.*`         | Header, footer, pita "uji coba", dan label database                                                                          |
+| `src/routes/foto-calon/`       | Foto calon (publik, cache panjang lewat URL berversi)                                                                        |
+| `src/lib/server/results.ts`    | Rekap, daftar surat suara, CSV + SHA-256                                                                                     |
+| `src/lib/server/dpt.ts`        | Parser CSV DPT dan sidik jari DPT                                                                                            |
+| `src/lib/server/testing/`      | SQLite di memori (`node:sqlite`) dengan shim D1 untuk tes                                                                    |
+| `src/routes/pilih/`            | Kode TPS, surat suara (5 menit), kode tanda terima sekali tampil, keluar otomatis 20 detik                                   |
+| `src/routes/petugas/`          | Halaman Petugas TPS: buat kode TPS, cek DPT, penghitung kode                                                                 |
+| `src/routes/hasil/`            | Hasil, pencarian kode, unduhan CSV (404 sebelum pemungutan suara ditutup)                                                    |
+| `src/routes/admin/`            | Ringkasan & jadwal + rekonsiliasi TPS, tutup darurat, calon + foto, DPT, kode pengecualian, audit log, panitia (super admin) |
+| `.github/workflows/`           | CI (lint, check, test, build) dan deploy                                                                                     |
 
 ## Aturan yang tidak boleh dilanggar
 
@@ -85,8 +95,10 @@ yang dipilih (`ballots`). Karena itu:
 4. Jangan menambah query yang menggabungkan (`JOIN`) `voted` dengan `ballots`, atau mengurutkan `ballots`
    selain berdasarkan kode.
 5. Setiap halaman dan action admin wajib memanggil `requireAdmin(locals)` (atau `requireSuperAdmin(locals)`
-   untuk mengelola admin), termasuk action form.
+   untuk mengelola admin, `requireOfficer(locals)` untuk `/petugas`), termasuk action form.
    Layout saja tidak cukup karena action tidak melewati load layout.
+6. **Jangan kaitkan kode TPS ke NIM**, dan jangan simpan kode atau token izin dalam bentuk asli. `vote_passes`
+   memuat NIM hanya sampai suara masuk; jangan tambahkan kolom yang menyambungkannya ke `ballots`.
 
 Aturan integritas (satu orang satu suara, tidak bisa diubah, penguncian DPT/calon/jadwal saat dibuka)
 ditegakkan oleh trigger di database. Kode aplikasi boleh memeriksa lebih awal untuk pesan yang ramah,
@@ -110,7 +122,7 @@ Tampilan memakai motif **surat suara kertas**. Pertahankan arah ini saat menamba
 
 ## Mengubah skema
 
-- Buat migrasi baru (`migrations/0004_....sql`). **Jangan mengedit** migrasi yang sudah
+- Buat migrasi baru (`migrations/0005_....sql`). **Jangan mengedit** migrasi yang sudah
   diterapkan ke staging/production; D1 tidak akan menjalankannya ulang.
 - Setiap aturan baru diberi tes di `src/lib/server/db/schema.spec.ts`. Tes memakai SQLite asli, jadi
   trigger ikut teruji.
@@ -168,8 +180,14 @@ Tampilan memakai motif **surat suara kertas**. Pertahankan arah ini saat menamba
 - Svelte 5 menulis ulang selector bertingkat dengan `:where(...)`, sehingga gaya lokal halaman admin bisa
   kalah oleh `:global(...)` di `src/routes/admin/+layout.svelte`. Naikkan spesifisitas (mis.
   `form.panel.cand`) bila gaya tidak berlaku.
-- `src/hooks.server.ts` membaca tabel `admins` di setiap request dari pengguna yang login (untuk peran).
-  Query ini kecil, tetapi jangan menambah query berat di hooks.
+- `src/hooks.server.ts` membaca tabel `admins` dan `officers` (satu query) di setiap request dari pengguna
+  yang login, dan `vote_passes` jika ada cookie izin. Query ini kecil, tetapi jangan menambah query berat di
+  hooks.
+- `/masuk` dan `/pilih` memakai named action (`?/google`, `?/code`, `?/unlock`, `?/vote`); SvelteKit
+  melarang mencampur action `default` dengan named action.
+- Setelah suara masuk, `/pilih` memakai `applyAction` (bukan `update()`): izin, dan untuk jalur pengecualian
+  juga sesinya, sudah habis, sehingga memuat ulang halaman akan mengalihkan ke `/masuk` dan tanda terima
+  hilang.
 - Content-Security-Policy belum dipasang karena popup Firebase memuat script dari `apis.google.com`;
   pasang setelah alur login teruji.
 

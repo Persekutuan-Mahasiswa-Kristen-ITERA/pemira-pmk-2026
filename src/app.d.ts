@@ -3,6 +3,7 @@
 // tipenya ada di worker-configuration.d.ts (`pnpm gen`).
 import type { AdminRole } from '#lib/server/admins.js';
 import type { AuthUser } from '#lib/server/auth.js';
+import type { VotePass } from '#lib/server/tps.js';
 
 declare global {
 	/** Commit git saat build (lihat vite.config.ts). */
@@ -15,6 +16,13 @@ declare global {
 			user: AuthUser | null;
 			/** Peran admin pengguna ini, atau null untuk pemilih biasa. */
 			role: AdminRole | null;
+			/** Petugas TPS: hanya boleh membuat kode TPS di /petugas. */
+			officer: boolean;
+			/**
+			 * Izin memilih yang masih berlaku dari cookie perangkat ini. Untuk jalur kode
+			 * pengecualian, izin ini sekaligus menjadi identitas pemilih (tanpa login Google).
+			 */
+			pass: VotePass | null;
 		}
 		// interface PageData {}
 		// interface PageState {}

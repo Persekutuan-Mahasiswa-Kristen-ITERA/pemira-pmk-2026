@@ -6,8 +6,11 @@ import type { LayoutServerLoad } from './$types';
 export type AppEnv = 'production' | 'staging' | 'local';
 
 export const load: LayoutServerLoad = ({ locals }) => ({
-	userEmail: locals.user?.email ?? null,
+	// Pemilih jalur kode pengecualian tidak punya email; tampilkan NIM-nya.
+	userEmail:
+		locals.user?.email ?? (locals.pass?.via === 'exception' ? `NIM ${locals.pass.nim}` : null),
 	isAdmin: locals.role !== null,
+	isOfficer: locals.officer,
 	appEnv: appEnv(env.APP_ENV)
 });
 

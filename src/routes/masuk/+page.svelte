@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { deserialize } from '$app/forms';
+	import { deserialize, enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Guilloche from '#lib/components/Guilloche.svelte';
 	import type { PageProps } from './$types';
 
-	let { data }: PageProps = $props();
+	let { data, form }: PageProps = $props();
 
 	let busy = $state(false);
 	let error = $state<string | null>(null);
@@ -37,7 +37,7 @@
 
 			const body = new FormData();
 			body.set('idToken', idToken);
-			const response = await fetch(location.pathname, {
+			const response = await fetch(`${location.pathname}?/google`, {
 				method: 'POST',
 				body,
 				headers: { 'x-sveltekit-action': 'true' }
@@ -45,7 +45,13 @@
 			const result = deserialize(await response.text());
 
 			if (result.type === 'success') {
-				const target = result.data?.admin ? resolve('/admin') : resolve('/pilih');
+				const kind = result.data?.target;
+				const target =
+					kind === 'admin'
+						? resolve('/admin')
+						: kind === 'officer'
+							? resolve('/petugas')
+							: resolve('/pilih');
 				await goto(target, { invalidateAll: true });
 			} else if (result.type === 'failure') {
 				error = String(result.data?.error ?? 'Login gagal.');
@@ -68,8 +74,8 @@
 			<p class="eyebrow">Masuk</p>
 			<h1>Gunakan akun Google <em>ITERA</em></h1>
 			<p class="lead">
-				Masuk dengan email mahasiswamu. Hanya mahasiswa yang terdaftar di DPT yang dapat memberikan
-				suara.
+				Masuk dengan email mahasiswamu di TPS. Hanya mahasiswa yang terdaftar di DPT yang dapat
+				memberikan suara, dan surat suara baru terbuka setelah petugas mengetik kode TPS.
 			</p>
 
 			<button
@@ -102,6 +108,32 @@
 			{#if error}
 				<p class="msg msg-error" role="alert">{error}</p>
 			{/if}
+
+			<details class="code-login" open={Boolean(form?.codeError)}>
+				<summary>Tidak bisa masuk dengan Google?</summary>
+				<p class="code-hint">
+					Datang ke meja panitia di TPS dengan KTM. Jika akunmu memang tidak bisa dipakai, dua admin
+					akan memberimu kode sekali pakai.
+				</p>
+				<form method="POST" action="?/code" use:enhance class="code-form">
+					<label class="visually-hidden" for="exception-code">Kode dari panitia</label>
+					<input
+						class="code-input"
+						id="exception-code"
+						name="code"
+						required
+						autocomplete="off"
+						autocapitalize="characters"
+						spellcheck="false"
+						placeholder="XXXX-XXXX"
+						maxlength="12"
+					/>
+					<button class="button button-ghost" type="submit">Masuk dengan kode</button>
+				</form>
+				{#if form?.codeError}
+					<p class="msg msg-error" role="alert">{form.codeError}</p>
+				{/if}
+			</details>
 
 			<p class="committee">
 				Panitia?
@@ -187,6 +219,37 @@
 
 	.msg {
 		margin-top: 20px;
+	}
+
+	.code-login {
+		margin-top: 28px;
+		font-size: 14px;
+		color: var(--ink-soft);
+	}
+
+	.code-login summary {
+		width: fit-content;
+		font-weight: 800;
+		color: var(--brown);
+		cursor: pointer;
+	}
+
+	.code-hint {
+		max-width: 46ch;
+		margin-top: 10px;
+	}
+
+	.code-form {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+		margin-top: 14px;
+	}
+
+	.code-form input {
+		flex: 1 1 12ch;
+		min-width: 0;
+		max-width: 18ch;
 	}
 
 	.committee {

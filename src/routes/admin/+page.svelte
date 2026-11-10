@@ -56,6 +56,33 @@
 	</p>
 {/if}
 
+<h2>Rekonsiliasi TPS</h2>
+<div class="panel tps">
+	<dl class="tps-grid">
+		<div>
+			<dt>Kode TPS dibuat</dt>
+			<dd>{data.tps.boothCodes.created}</dd>
+		</div>
+		<div>
+			<dt>Kode TPS dipakai</dt>
+			<dd>{data.tps.boothCodes.used}</dd>
+		</div>
+		<div>
+			<dt>Kode TPS kedaluwarsa</dt>
+			<dd>{data.tps.boothCodes.expired}</dd>
+		</div>
+		<div>
+			<dt>Kode pengecualian dipakai</dt>
+			<dd>{data.tps.exceptionsUsed}</dd>
+		</div>
+	</dl>
+	<p class="hint">
+		Di akhir hari, cocokkan <strong>kode TPS dipakai</strong> dengan jumlah tanda tangan di absensi. Jumlah
+		kode yang dipakai (TPS dan pengecualian) boleh sedikit lebih banyak dari jumlah yang sudah memilih,
+		karena pemilih yang waktunya habis memakai kode baru. Tetapi jumlah itu tidak boleh lebih sedikit.
+	</p>
+</div>
+
 <h2>Jadwal</h2>
 <form method="POST" action="?/schedule" use:enhance class="panel">
 	<label class="field">
@@ -119,6 +146,29 @@
 {/if}
 
 <style>
+	.tps {
+		display: grid;
+		gap: 14px;
+	}
+
+	.tps-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+		gap: 12px;
+		margin: 0;
+	}
+
+	.tps-grid dt {
+		font-size: 12px;
+		font-weight: 800;
+		color: var(--ink-muted);
+	}
+
+	.tps-grid dd {
+		margin: 0;
+		font: 500 30px/1.1 var(--font-display);
+	}
+
 	.stats {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));

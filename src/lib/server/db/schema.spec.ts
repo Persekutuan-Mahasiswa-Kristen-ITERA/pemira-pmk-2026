@@ -9,7 +9,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { freshDb } from '../testing/sqlite';
+import { freshDb, grantPass } from '../testing/sqlite';
 
 const now = () => Math.floor(Date.now() / 1000);
 
@@ -20,8 +20,13 @@ function setSchedule(db: DatabaseSync, opensAt: number, closesAt: number) {
 	);
 }
 
-/** Meniru alur suara di aplikasi: dua insert dalam satu transaksi. */
+/** Meniru alur suara di aplikasi: izin dari kode TPS, lalu dua insert dalam satu transaksi. */
 function castVote(db: DatabaseSync, nim: string, code: string, candidateId: number) {
+	const hasPasses = db
+		.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'vote_passes'")
+		.get();
+	// Database dari migrasi lama (sebelum 0004) belum mengenal izin memilih.
+	if (hasPasses && db.prepare('SELECT 1 FROM voters WHERE nim = ?').get(nim)) grantPass(db, nim);
 	db.exec('BEGIN');
 	try {
 		db.prepare('INSERT INTO voted (nim) VALUES (?)').run(nim);
@@ -336,5 +341,28 @@ describe('migrasi 0003 (admin dan foto calon)', () => {
 		expect(columns).not.toContain('photo_url');
 		expect(count(old, 'ballots')).toBe(1);
 		expect(count(old, 'voted')).toBe(1);
+	});
+});
+
+describe('migrasi 0004 (TPS)', () => {
+	const migration = (name: string) => readFileSync(join(process.cwd(), 'migrations', name), 'utf8');
+
+	it('berjalan saat pemilihan sedang berlangsung tanpa menyentuh suara', () => {
+		const old = new DatabaseSync(':memory:');
+		old.exec('PRAGMA foreign_keys = ON;');
+		for (const file of ['0001_init.sql', '0002_voters_by_nim.sql', '0003_admins_and_photos.sql']) {
+			old.exec(migration(file));
+		}
+		old.exec(`INSERT INTO candidates (id, number, name) VALUES (1, 1, 'Satu')`);
+		old.exec(`INSERT INTO voters (nim, name) VALUES ('${ALICE}', 'Alice'), ('${BOB}', 'Bob')`);
+		setSchedule(old, now() - 60, now() + 3600);
+		castVote(old, ALICE, 'AAAA-BBBB', 1);
+
+		old.exec(migration('0004_tps.sql'));
+
+		expect(count(old, 'ballots')).toBe(1);
+		expect(count(old, 'voted')).toBe(1);
+		// Setelah migrasi, suara tanpa izin memilih ditolak.
+		expect(() => old.exec(`INSERT INTO voted (nim) VALUES ('${BOB}')`)).toThrow(/no_pass/);
 	});
 });

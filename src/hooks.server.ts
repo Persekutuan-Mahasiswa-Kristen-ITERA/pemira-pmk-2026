@@ -1,9 +1,10 @@
 import { env } from 'cloudflare:workers';
 import type { Handle } from '@sveltejs/kit/hooks';
-import { getAdminRole } from '#lib/server/admins.js';
+import { getStaffRoles } from '#lib/server/admins.js';
 import { SESSION_COOKIE, verifyIdToken } from '#lib/server/auth.js';
 import { getDb } from '#lib/server/db.js';
 import { isFirebaseProxyPath, proxyFirebaseAuth } from '#lib/server/firebase-proxy.js';
+import { getPass, PASS_COOKIE } from '#lib/server/tps.js';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	if (isFirebaseProxyPath(event.url.pathname)) {
@@ -12,6 +13,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	event.locals.user = null;
 	event.locals.role = null;
+	event.locals.officer = false;
+	event.locals.pass = null;
 
 	const token = event.cookies.get(SESSION_COOKIE);
 	if (token) {
@@ -24,11 +27,16 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 	if (event.locals.user) {
 		// Peran dihitung ulang setiap request: admin yang dicabut langsung kehilangan akses.
-		event.locals.role = await getAdminRole(
-			getDb(),
-			event.locals.user.email,
-			env.SUPER_ADMIN_EMAILS
-		);
+		const roles = await getStaffRoles(getDb(), event.locals.user.email, env.SUPER_ADMIN_EMAILS);
+		event.locals.role = roles.role;
+		event.locals.officer = roles.officer;
+	}
+
+	const passToken = event.cookies.get(PASS_COOKIE);
+	if (passToken) {
+		event.locals.pass = await getPass(getDb(), passToken);
+		// Izin kedaluwarsa atau sudah terpakai: hapus cookie-nya.
+		if (!event.locals.pass) event.cookies.delete(PASS_COOKIE, { path: '/' });
 	}
 
 	const response = await resolve(event);
@@ -43,7 +51,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	if (event.url.protocol === 'https:') {
 		response.headers.set('strict-transport-security', 'max-age=31536000');
 	}
-	if (event.locals.user) {
+	if (event.locals.user || event.locals.pass) {
 		// Halaman pribadi (termasuk kode tanda terima) tidak boleh disimpan cache.
 		response.headers.set('cache-control', 'private, no-store');
 	}

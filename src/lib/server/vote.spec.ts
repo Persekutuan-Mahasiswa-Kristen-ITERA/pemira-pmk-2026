@@ -1,7 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { asD1, freshDb } from './testing/sqlite';
-import { castVote, getVoterState } from './vote';
+import { asD1, freshDb, grantPass } from './testing/sqlite';
+import { castVote as castVoteRaw, getVoterState } from './vote';
 
 const ALICE = '122140001';
 const BOB = '122140002';
@@ -19,6 +19,14 @@ function setSchedule(opensOffset: number, closesOffset: number) {
 			'UPDATE election_config SET opens_at = unixepoch() + ?, closes_at = unixepoch() + ? WHERE id = 1'
 		)
 		.run(opensOffset, closesOffset);
+}
+
+/** Seperti alur aplikasi: izin memilih (dari kode TPS) lalu suara. */
+function castVote(...args: Parameters<typeof castVoteRaw>) {
+	if (count('voters') > 0 && raw.prepare('SELECT 1 FROM voters WHERE nim = ?').get(args[1])) {
+		grantPass(raw, args[1]);
+	}
+	return castVoteRaw(...args);
 }
 
 beforeEach(() => {
