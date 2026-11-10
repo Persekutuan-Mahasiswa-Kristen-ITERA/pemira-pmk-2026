@@ -7,7 +7,7 @@ import { unixToWibInput, wibInputToUnix } from '#lib/time.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	requireAdmin(locals.user);
+	requireAdmin(locals);
 	const db = getDb();
 	const [election, participation] = await Promise.all([
 		getElectionStatus(db),
@@ -23,7 +23,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 export const actions: Actions = {
 	schedule: async ({ locals, request }) => {
-		const admin = requireAdmin(locals.user);
+		const admin = requireAdmin(locals);
 		const form = await request.formData();
 		const title = String(form.get('title') ?? '').trim();
 		const opensAt = wibInputToUnix(String(form.get('opens_at') ?? ''));
@@ -54,7 +54,7 @@ export const actions: Actions = {
 	},
 
 	close: async ({ locals, request }) => {
-		const admin = requireAdmin(locals.user);
+		const admin = requireAdmin(locals);
 		const form = await request.formData();
 		if (form.get('confirm') !== 'TUTUP') {
 			return fail(400, { error: 'Ketik TUTUP untuk mengonfirmasi tutup darurat.' });

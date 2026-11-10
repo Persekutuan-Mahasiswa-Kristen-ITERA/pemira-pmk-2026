@@ -25,8 +25,13 @@ export function isValidNim(nim: string): boolean {
 	return /^\d{8,12}$/.test(nim);
 }
 
-/** `ADMIN_EMAILS` berisi daftar email dipisah koma (secret Cloudflare). */
-export function parseAdminEmails(raw: string | undefined): Set<string> {
+/** Bentuk email yang wajar untuk undangan admin (akun Google apa pun). */
+export function isValidEmail(email: string): boolean {
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(email));
+}
+
+/** `SUPER_ADMIN_EMAILS` berisi daftar email dipisah koma (secret Cloudflare). */
+export function parseEmailList(raw: string | undefined): Set<string> {
 	return new Set(
 		(raw ?? '')
 			.split(',')
@@ -35,11 +40,11 @@ export function parseAdminEmails(raw: string | undefined): Set<string> {
 	);
 }
 
-export function isAdminEmail(email: string, adminEmailsRaw: string | undefined): boolean {
-	return parseAdminEmails(adminEmailsRaw).has(normalizeEmail(email));
+export function isSuperAdminEmail(email: string, superAdminEmailsRaw: string | undefined): boolean {
+	return parseEmailList(superAdminEmailsRaw).has(normalizeEmail(email));
 }
 
 /** Siapa yang boleh login: mahasiswa ITERA (hak pilih dicek terpisah ke DPT) atau admin. */
-export function canSignIn(email: string, adminEmailsRaw: string | undefined): boolean {
-	return isStudentEmail(email) || isAdminEmail(email, adminEmailsRaw);
+export function canSignIn(email: string, isAdmin: boolean): boolean {
+	return isStudentEmail(email) || isAdmin;
 }

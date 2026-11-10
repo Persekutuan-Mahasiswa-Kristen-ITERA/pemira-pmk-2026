@@ -1,5 +1,8 @@
+import { env } from 'cloudflare:workers';
 import type { Handle } from '@sveltejs/kit/hooks';
+import { getAdminRole } from '#lib/server/admins.js';
 import { SESSION_COOKIE, verifyIdToken } from '#lib/server/auth.js';
+import { getDb } from '#lib/server/db.js';
 import { isFirebaseProxyPath, proxyFirebaseAuth } from '#lib/server/firebase-proxy.js';
 
 export const handle: Handle = async ({ event, resolve }) => {
@@ -8,6 +11,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	event.locals.user = null;
+	event.locals.role = null;
 
 	const token = event.cookies.get(SESSION_COOKIE);
 	if (token) {
@@ -17,6 +21,14 @@ export const handle: Handle = async ({ event, resolve }) => {
 			// Token kedaluwarsa atau tidak sah: akhiri sesi.
 			event.cookies.delete(SESSION_COOKIE, { path: '/' });
 		}
+	}
+	if (event.locals.user) {
+		// Peran dihitung ulang setiap request: admin yang dicabut langsung kehilangan akses.
+		event.locals.role = await getAdminRole(
+			getDb(),
+			event.locals.user.email,
+			env.SUPER_ADMIN_EMAILS
+		);
 	}
 
 	const response = await resolve(event);

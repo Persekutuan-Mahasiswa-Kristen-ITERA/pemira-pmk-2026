@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { nimFromEmail } from '#lib/server/access.js';
 import { getDb } from '#lib/server/db.js';
+import { candidatePhotos } from '#lib/server/candidates.js';
 import { getElectionStatus } from '#lib/server/election.js';
 import { castVote, getVoterState, type CastVoteFailure } from '#lib/server/vote.js';
 import type { Actions, PageServerLoad } from './$types';
@@ -10,25 +11,23 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const db = getDb();
 	const nim = nimFromEmail(locals.user.email);
 
-	const [election, voterState, candidates] = await Promise.all([
+	const [election, voterState, candidates, photos] = await Promise.all([
 		getElectionStatus(db),
 		getVoterState(db, nim),
 		db
-			.prepare(
-				'SELECT id, number, name, vision, mission, photo_url FROM candidates ORDER BY number'
-			)
-			.all<{
-				id: number;
-				number: number;
-				name: string;
-				vision: string;
-				mission: string;
-				photo_url: string | null;
-			}>()
-			.then((r) => r.results)
+			.prepare('SELECT id, number, name, vision, mission FROM candidates ORDER BY number')
+			.all<{ id: number; number: number; name: string; vision: string; mission: string }>()
+			.then((r) => r.results),
+		candidatePhotos(db)
 	]);
 
-	return { email: locals.user.email, nim, election, voterState, candidates };
+	return {
+		email: locals.user.email,
+		nim,
+		election,
+		voterState,
+		candidates: candidates.map((c) => ({ ...c, photo: photos.get(c.id) ?? null }))
+	};
 };
 
 const FAILURE_MESSAGES: Record<CastVoteFailure, string> = {

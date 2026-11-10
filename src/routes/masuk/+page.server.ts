@@ -1,7 +1,9 @@
 import { env } from 'cloudflare:workers';
 import { fail, redirect } from '@sveltejs/kit';
-import { canSignIn, isAdminEmail, STUDENT_DOMAIN } from '#lib/server/access.js';
+import { canSignIn, STUDENT_DOMAIN } from '#lib/server/access.js';
+import { getAdminRole, recordAdminLogin } from '#lib/server/admins.js';
 import { SESSION_COOKIE, verifyIdToken } from '#lib/server/auth.js';
+import { getDb } from '#lib/server/db.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ locals }) => {
@@ -20,7 +22,9 @@ export const actions: Actions = {
 			return fail(401, { error: 'Login tidak dapat diverifikasi. Silakan coba lagi.' });
 		}
 
-		if (!canSignIn(user.email, env.ADMIN_EMAILS)) {
+		const db = getDb();
+		const role = await getAdminRole(db, user.email, env.SUPER_ADMIN_EMAILS);
+		if (!canSignIn(user.email, role !== null)) {
 			return fail(403, {
 				error: `Akun ${user.email} tidak bisa dipakai. Gunakan email @${STUDENT_DOMAIN}.`
 			});
@@ -33,6 +37,7 @@ export const actions: Actions = {
 			sameSite: 'lax',
 			maxAge
 		});
-		return { admin: isAdminEmail(user.email, env.ADMIN_EMAILS) };
+		if (role === 'admin') await recordAdminLogin(db, user.email).run();
+		return { admin: role !== null };
 	}
 };

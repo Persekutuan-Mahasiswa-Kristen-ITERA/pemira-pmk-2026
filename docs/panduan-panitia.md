@@ -11,8 +11,18 @@ yang ditandai **(developer)**.
 | Saksi     | Perwakilan setiap calon. Menyaksikan simulasi, penguncian DPT, penutupan, dan rekap. |
 | Developer | Deploy aplikasi dan menjalankan perintah teknis. Tidak memegang keputusan pemilihan. |
 
-Admin aplikasi adalah email yang terdaftar di secret `ADMIN_EMAILS` (diatur developer). Admin masuk lewat
-**Masuk → "Masuk dengan akun panitia"**.
+Ada dua peran admin aplikasi:
+
+- **Super admin**: email di secret `SUPER_ADMIN_EMAILS` (diatur developer). Hanya super admin yang bisa
+  mengundang dan mencabut admin lewat menu **Panitia** di panel admin.
+- **Admin**: akun Google yang diundang super admin. Admin bisa mengelola jadwal, calon (termasuk foto), dan
+  DPT, tetapi tidak bisa mengundang admin lain.
+
+Semua admin masuk lewat **Masuk → "Masuk dengan akun panitia"**. Undangan dan pencabutan tercatat di audit
+log, dan admin yang dicabut langsung kehilangan akses.
+
+Foto calon diunggah di menu **Calon** (JPG, PNG, atau WebP; otomatis diperkecil). Seperti data calon
+lainnya, foto terkunci begitu pemilihan dibuka, jadi pastikan sudah final sebelum waktu buka.
 
 ## Garis waktu
 

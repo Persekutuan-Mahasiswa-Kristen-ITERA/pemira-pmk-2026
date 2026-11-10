@@ -142,7 +142,11 @@
 				<fieldset class="slots" disabled={confirming}>
 					<legend class="visually-hidden">Calon ketua</legend>
 					{#each data.candidates as c (c.id)}
-						<label class="candidate" class:selected={selectedId === c.id}>
+						<label
+							class="candidate"
+							class:selected={selectedId === c.id}
+							class:has-photo={c.photo !== null}
+						>
 							<input
 								class="visually-hidden"
 								type="radio"
@@ -154,6 +158,7 @@
 							<span class="target" aria-hidden="true">
 								{#if selectedId === c.id}<PunchHole />{/if}
 							</span>
+							{#if c.photo}<img class="cand-photo" src={c.photo} alt="" />{/if}
 							<span class="cand-number" aria-hidden="true">{c.number}</span>
 							<span class="cand-name"
 								><span class="visually-hidden">Nomor {c.number}, </span>{c.name}</span
@@ -325,6 +330,34 @@
 
 	.selected .target {
 		border-color: transparent;
+	}
+
+	.has-photo {
+		grid-template-columns: 120px minmax(0, 1fr);
+		column-gap: 18px;
+	}
+
+	.cand-photo {
+		grid-row: 1 / span 2;
+		width: 100%;
+		aspect-ratio: 3 / 4;
+		object-fit: cover;
+		object-position: top;
+		border-radius: 3px;
+		box-shadow: 0 0 0 1px rgb(68 46 22 / 0.25);
+	}
+
+	.has-photo .cand-number,
+	.has-photo .cand-name {
+		grid-column: 2;
+	}
+
+	.has-photo .cand-name {
+		align-self: start;
+	}
+
+	.has-photo .cand-text {
+		grid-column: 1 / -1;
 	}
 
 	.cand-number {

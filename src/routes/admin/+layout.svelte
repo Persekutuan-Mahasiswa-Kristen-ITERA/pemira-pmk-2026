@@ -3,14 +3,17 @@
 	import { resolve } from '$app/paths';
 	import type { LayoutProps } from './$types';
 
-	let { children }: LayoutProps = $props();
+	let { children, data }: LayoutProps = $props();
 
-	const links = [
+	let links = $derived([
 		{ href: resolve('/admin'), label: 'Ringkasan & jadwal', hint: 'Status dan waktu pemilihan' },
-		{ href: resolve('/admin/calon'), label: 'Calon', hint: 'Nomor urut, visi, misi' },
+		{ href: resolve('/admin/calon'), label: 'Calon', hint: 'Nomor urut, foto, visi, misi' },
 		{ href: resolve('/admin/dpt'), label: 'DPT', hint: 'Daftar pemilih tetap' },
-		{ href: resolve('/admin/audit'), label: 'Audit log', hint: 'Riwayat tindakan admin' }
-	];
+		{ href: resolve('/admin/audit'), label: 'Audit log', hint: 'Riwayat tindakan admin' },
+		...(data.isSuperAdmin
+			? [{ href: resolve('/admin/panitia'), label: 'Panitia', hint: 'Undang dan cabut admin' }]
+			: [])
+	]);
 </script>
 
 <div class="container admin">

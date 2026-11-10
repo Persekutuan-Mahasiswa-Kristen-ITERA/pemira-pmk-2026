@@ -85,6 +85,9 @@
 						<span class="no" aria-hidden="true">{row.number}</span>
 						<div class="tally-main">
 							<p class="tally-name">
+								{#if results.photoByNumber[row.number]}
+									<img class="avatar" src={results.photoByNumber[row.number]} alt="" />
+								{/if}
 								<span class="visually-hidden">Nomor {row.number}, </span>{row.name}
 								{#if top}<span class="badge">Suara terbanyak</span>{/if}
 							</p>
@@ -325,6 +328,17 @@
 		align-items: center;
 		gap: 4px 12px;
 		font: 500 24px/1.2 var(--font-display);
+	}
+
+	.avatar {
+		width: 44px;
+		height: 44px;
+		border-radius: 50%;
+		object-fit: cover;
+		object-position: top;
+		box-shadow:
+			0 0 0 2px var(--paper-light),
+			0 0 0 3.5px var(--gold);
 	}
 
 	.badge {

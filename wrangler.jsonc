@@ -30,8 +30,8 @@
 		}
 	}
 	// Secret (TIDAK disimpan di repo):
-	//   ADMIN_EMAILS  daftar email admin dipisah koma
-	//   pnpm wrangler pages secret put ADMIN_EMAILS                 (production)
-	//   pnpm wrangler pages secret put ADMIN_EMAILS --env preview   (staging)
+	//   SUPER_ADMIN_EMAILS  email super admin dipisah koma (admin lain diundang lewat /admin/panitia)
+	//   pnpm wrangler pages secret put SUPER_ADMIN_EMAILS                 (production)
+	//   pnpm wrangler pages secret put SUPER_ADMIN_EMAILS --env preview   (staging)
 	// Untuk pengembangan lokal, salin `.dev.vars.example` menjadi `.dev.vars`.
 }

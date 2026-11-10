@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canSignIn, isAdminEmail, isStudentEmail, nimFromEmail } from './access';
+import { canSignIn, isStudentEmail, isSuperAdminEmail, isValidEmail, nimFromEmail } from './access';
 
 describe('isStudentEmail', () => {
 	it('hanya menerima domain student.itera.ac.id persis', () => {
@@ -16,16 +16,23 @@ describe('isStudentEmail', () => {
 describe('admin', () => {
 	const raw = ' Martin.Manullang@if.itera.ac.id , panitia@student.itera.ac.id,, ';
 
-	it('mengenali email admin tanpa peduli huruf besar/spasi', () => {
-		expect(isAdminEmail('martin.manullang@if.itera.ac.id', raw)).toBe(true);
-		expect(isAdminEmail('orang.lain@if.itera.ac.id', raw)).toBe(false);
-		expect(isAdminEmail('martin.manullang@if.itera.ac.id', undefined)).toBe(false);
+	it('mengenali super admin tanpa peduli huruf besar/spasi', () => {
+		expect(isSuperAdminEmail('martin.manullang@if.itera.ac.id', raw)).toBe(true);
+		expect(isSuperAdminEmail('orang.lain@if.itera.ac.id', raw)).toBe(false);
+		expect(isSuperAdminEmail('martin.manullang@if.itera.ac.id', undefined)).toBe(false);
 	});
 
 	it('admin di luar domain mahasiswa tetap boleh login', () => {
-		expect(canSignIn('martin.manullang@if.itera.ac.id', raw)).toBe(true);
-		expect(canSignIn('dosen.lain@if.itera.ac.id', raw)).toBe(false);
-		expect(canSignIn('budi.122140001@student.itera.ac.id', raw)).toBe(true);
+		expect(canSignIn('martin.manullang@if.itera.ac.id', true)).toBe(true);
+		expect(canSignIn('dosen.lain@if.itera.ac.id', false)).toBe(false);
+		expect(canSignIn('budi.122140001@student.itera.ac.id', false)).toBe(true);
+	});
+
+	it('memeriksa bentuk email undangan', () => {
+		expect(isValidEmail(' Panitia.Baru@Gmail.com ')).toBe(true);
+		expect(isValidEmail('tanpa-domain')).toBe(false);
+		expect(isValidEmail('a@b')).toBe(false);
+		expect(isValidEmail('a b@c.id')).toBe(false);
 	});
 });
 

@@ -8,7 +8,7 @@ import type { Actions, PageServerLoad } from './$types';
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
 export const load: PageServerLoad = async ({ locals }) => {
-	requireAdmin(locals.user);
+	requireAdmin(locals);
 	const db = getDb();
 	const [election, nims] = await Promise.all([
 		getElectionStatus(db),
@@ -26,7 +26,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 export const actions: Actions = {
 	import: async ({ locals, request }) => {
-		const admin = requireAdmin(locals.user);
+		const admin = requireAdmin(locals);
 		const file = (await request.formData()).get('file');
 		if (!(file instanceof File) || file.size === 0) {
 			return fail(400, { error: 'Pilih berkas CSV terlebih dahulu.' });

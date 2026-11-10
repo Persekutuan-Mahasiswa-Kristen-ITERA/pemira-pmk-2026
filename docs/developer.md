@@ -17,8 +17,15 @@ Browser ──► Cloudflare Pages (SvelteKit, server-side) ──► Cloudflare
   sign out dari Firebase (persistence di memori saja). Token dikirim ke action `/masuk`, diverifikasi, dan
   disimpan di cookie httpOnly `pemira_session`. Setiap request, `src/hooks.server.ts` memverifikasi ulang
   cookie itu menjadi `locals.user`. Sesi berakhir saat token kedaluwarsa (maks. 1 jam).
-- **Siapa boleh masuk**: email `@student.itera.ac.id`, atau email yang ada di secret `ADMIN_EMAILS`.
-  Masuk bukan berarti boleh memilih: hak pilih ditentukan tabel `voters` (DPT).
+- **Siapa boleh masuk**: email `@student.itera.ac.id`, atau admin. Masuk bukan berarti boleh memilih: hak
+  pilih ditentukan tabel `voters` (DPT).
+- **Peran admin** (`locals.role`, dihitung ulang tiap request di `src/hooks.server.ts`): `super` untuk email
+  di secret `SUPER_ADMIN_EMAILS`, `admin` untuk email di tabel `admins` (diundang super admin lewat
+  `/admin/panitia`). Pakai `requireAdmin(locals)` atau `requireSuperAdmin(locals)` dari
+  `src/lib/server/admin.ts`.
+- **Foto calon** disimpan di tabel `candidate_photos` (BLOB, maks. 1 MB, diperkecil di browser oleh
+  `src/lib/resize-image.ts`) dan disajikan publik di `/foto-calon/[id]`. Jenis berkas diperiksa dari isinya
+  (`sniffImageType`), bukan dari nama berkas; SVG ditolak.
 - **Identitas pemilih = NIM**: NIM diambil dari email yang sudah diverifikasi Google
   (`nama.nim@student.itera.ac.id`, lihat `nimFromEmail` di `src/lib/server/access.ts`) lalu dicocokkan ke
   `voters.nim`. Email dibuat kampus, jadi NIM di dalamnya dapat dipercaya. DPT dari kampus tidak selalu
@@ -38,13 +45,15 @@ Browser ──► Cloudflare Pages (SvelteKit, server-side) ──► Cloudflare
 | `src/lib/server/vote.ts`    | Status pemilih dan pencatatan suara (`castVote`)                          |
 | `src/lib/server/auth.ts`    | Verifikasi Firebase ID token                                              |
 | `src/lib/server/access.ts`  | Aturan domain email, NIM dari email, dan admin                            |
-| `src/lib/server/admin.ts`   | `requireAdmin`, pencatatan audit log                                      |
+| `src/lib/server/admin.ts`   | `requireAdmin`, `requireSuperAdmin`, pencatatan audit log                 |
+| `src/lib/server/admins.ts`  | Peran admin (super admin dari secret, admin undangan dari tabel)          |
+| `src/lib/server/photos.ts`  | Validasi foto calon                                                       |
 | `src/lib/server/results.ts` | Rekap, daftar surat suara, CSV + SHA-256                                  |
 | `src/lib/server/dpt.ts`     | Parser CSV DPT dan sidik jari DPT                                         |
 | `src/lib/server/testing/`   | SQLite di memori (`node:sqlite`) dengan shim D1 untuk tes                 |
 | `src/routes/pilih/`         | Surat suara; kode tanda terima hanya ditampilkan sekali                   |
 | `src/routes/hasil/`         | Hasil, pencarian kode, unduhan CSV (404 sebelum pemungutan suara ditutup) |
-| `src/routes/admin/`         | Ringkasan & jadwal, tutup darurat, calon, impor DPT, audit log            |
+| `src/routes/admin/`         | Ringkasan & jadwal, tutup darurat, calon + foto, DPT, audit log, panitia  |
 | `.github/workflows/`        | CI (lint, check, test, build) dan deploy                                  |
 
 ## Aturan yang tidak boleh dilanggar
@@ -60,7 +69,8 @@ yang dipilih (`ballots`). Karena itu:
    surat suara tanpa pemilih atau sebaliknya.
 4. Jangan menambah query yang menggabungkan (`JOIN`) `voted` dengan `ballots`, atau mengurutkan `ballots`
    selain berdasarkan kode.
-5. Setiap halaman dan action admin wajib memanggil `requireAdmin(locals.user)`, termasuk action form.
+5. Setiap halaman dan action admin wajib memanggil `requireAdmin(locals)` (atau `requireSuperAdmin(locals)`
+   untuk mengelola admin), termasuk action form.
    Layout saja tidak cukup karena action tidak melewati load layout.
 
 Aturan integritas (satu orang satu suara, tidak bisa diubah, penguncian DPT/calon/jadwal saat dibuka)
@@ -69,7 +79,7 @@ tetapi **jangan memindahkan** aturan dari trigger ke kode aplikasi.
 
 ## Mengubah skema
 
-- Buat migrasi baru (`migrations/0002_....sql`). **Jangan mengedit** `0001_init.sql` yang sudah
+- Buat migrasi baru (`migrations/0004_....sql`). **Jangan mengedit** migrasi yang sudah
   diterapkan ke staging/production; D1 tidak akan menjalankannya ulang.
 - Setiap aturan baru diberi tes di `src/lib/server/db/schema.spec.ts`. Tes memakai SQLite asli, jadi
   trigger ikut teruji.
@@ -87,8 +97,8 @@ tetapi **jangan memindahkan** aturan dari trigger ke kode aplikasi.
   `env.preview` di `wrangler.jsonc` (database staging).
 - Secret diatur per lingkungan, tidak pernah di repo:
   ```sh
-  pnpm wrangler pages secret put ADMIN_EMAILS                 # production
-  pnpm wrangler pages secret put ADMIN_EMAILS --env preview   # staging
+  pnpm wrangler pages secret put SUPER_ADMIN_EMAILS                 # production
+  pnpm wrangler pages secret put SUPER_ADMIN_EMAILS --env preview   # staging
   ```
   Untuk lokal, salin `.dev.vars.example` menjadi `.dev.vars`.
 - Pemeriksaan origin (CSRF) SvelteKit hanya aktif di hasil build. Untuk menguji perilaku production secara

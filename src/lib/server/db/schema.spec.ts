@@ -257,3 +257,84 @@ describe('migrasi 0002 (DPT berbasis NIM)', () => {
 		expect(count(old, 'voted')).toBe(1);
 	});
 });
+
+describe('foto calon', () => {
+	const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
+	const putPhoto = (candidateId: number) =>
+		db
+			.prepare(
+				`INSERT INTO candidate_photos (candidate_id, mime, data) VALUES (?, 'image/png', ?)
+				 ON CONFLICT (candidate_id) DO UPDATE SET data = excluded.data`
+			)
+			.run(candidateId, PNG);
+
+	it('boleh diunggah, diganti, dan dihapus sebelum pemilihan dibuka', () => {
+		setSchedule(db, now() + 3600, now() + 7200);
+		putPhoto(1);
+		putPhoto(1);
+		expect(count(db, 'candidate_photos')).toBe(1);
+		db.prepare('DELETE FROM candidate_photos WHERE candidate_id = 1').run();
+		expect(count(db, 'candidate_photos')).toBe(0);
+	});
+
+	it('terkunci setelah pemilihan dibuka', () => {
+		putPhoto(1);
+		setSchedule(db, now() - 60, now() + 3600);
+		expect(() => putPhoto(2)).toThrow(/candidates_locked/);
+		expect(() => putPhoto(1)).toThrow(/candidates_locked/);
+		expect(() => db.prepare('DELETE FROM candidate_photos').run()).toThrow(/candidates_locked/);
+	});
+
+	it('hanya menerima jenis gambar yang diizinkan', () => {
+		expect(() =>
+			db
+				.prepare(
+					`INSERT INTO candidate_photos (candidate_id, mime, data) VALUES (1, 'image/svg+xml', ?)`
+				)
+				.run(PNG)
+		).toThrow(/CHECK/);
+	});
+
+	it('ikut terhapus saat calon dihapus', () => {
+		putPhoto(1);
+		db.prepare('DELETE FROM candidates WHERE id = 1').run();
+		expect(count(db, 'candidate_photos')).toBe(0);
+	});
+});
+
+describe('admin undangan', () => {
+	it('email disimpan dalam huruf kecil tanpa spasi', () => {
+		expect(() =>
+			db.prepare("INSERT INTO admins (email, invited_by) VALUES ('Panitia@Gmail.com', 'x')").run()
+		).toThrow(/CHECK/);
+		expect(() =>
+			db.prepare("INSERT INTO admins (email, invited_by) VALUES ('bukan-email', 'x')").run()
+		).toThrow(/CHECK/);
+		db.prepare("INSERT INTO admins (email, invited_by) VALUES ('panitia@gmail.com', 'x')").run();
+		expect(count(db, 'admins')).toBe(1);
+	});
+});
+
+describe('migrasi 0003 (admin dan foto calon)', () => {
+	const migration = (name: string) => readFileSync(join(process.cwd(), 'migrations', name), 'utf8');
+
+	it('berjalan saat pemilihan sedang berlangsung tanpa menyentuh suara', () => {
+		const old = new DatabaseSync(':memory:');
+		old.exec('PRAGMA foreign_keys = ON;');
+		old.exec(migration('0001_init.sql'));
+		old.exec(migration('0002_voters_by_nim.sql'));
+		old.exec(`INSERT INTO candidates (id, number, name, photo_url) VALUES (1, 1, 'Satu', NULL)`);
+		old.exec(`INSERT INTO voters (nim, name) VALUES ('${ALICE}', 'Alice')`);
+		setSchedule(old, now() - 60, now() + 3600);
+		castVote(old, ALICE, 'AAAA-BBBB', 1);
+
+		old.exec(migration('0003_admins_and_photos.sql'));
+
+		const columns = (old.prepare('PRAGMA table_info(candidates)').all() as { name: string }[]).map(
+			(c) => c.name
+		);
+		expect(columns).not.toContain('photo_url');
+		expect(count(old, 'ballots')).toBe(1);
+		expect(count(old, 'voted')).toBe(1);
+	});
+});

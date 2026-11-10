@@ -1,15 +1,22 @@
-import { env } from 'cloudflare:workers';
 import { error, redirect } from '@sveltejs/kit';
-import { isAdminEmail } from './access';
 import type { AuthUser } from './auth';
 
 /**
- * Pastikan pengguna adalah admin. WAJIB dipanggil di setiap `load` DAN setiap
- * action di bawah /admin (pemeriksaan di layout tidak melindungi action).
+ * Pastikan pengguna adalah admin (super admin atau admin undangan). WAJIB dipanggil di
+ * setiap `load` DAN setiap action di bawah /admin (pemeriksaan di layout tidak melindungi
+ * action). Peran dihitung ulang dari database di setiap request (`hooks.server.ts`), jadi
+ * admin yang dicabut langsung kehilangan akses.
  */
-export function requireAdmin(user: AuthUser | null): AuthUser {
-	if (!user) redirect(303, '/masuk');
-	if (!isAdminEmail(user.email, env.ADMIN_EMAILS)) error(403, 'Halaman ini khusus panitia.');
+export function requireAdmin(locals: App.Locals): AuthUser {
+	if (!locals.user) redirect(303, '/masuk');
+	if (!locals.role) error(403, 'Halaman ini khusus panitia.');
+	return locals.user;
+}
+
+/** Hanya super admin (dari secret `SUPER_ADMIN_EMAILS`), misalnya untuk mengundang admin. */
+export function requireSuperAdmin(locals: App.Locals): AuthUser {
+	const user = requireAdmin(locals);
+	if (locals.role !== 'super') error(403, 'Halaman ini khusus super admin.');
 	return user;
 }
 

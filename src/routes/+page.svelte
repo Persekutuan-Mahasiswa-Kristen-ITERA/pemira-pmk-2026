@@ -138,6 +138,7 @@
 						{#each data.candidates as c (c.number)}
 							<li>
 								<span class="slot-no">{c.number}</span>
+								{#if c.photo}<img class="slot-photo" src={c.photo} alt="" />{/if}
 								<span class="slot-name">{c.name}</span>
 							</li>
 						{/each}
@@ -360,6 +361,8 @@
 	}
 
 	.slots {
+		position: relative;
+		z-index: 4; /* di atas bekas lipatan kertas, supaya garisnya tidak memotong foto */
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		margin: 0;
@@ -381,6 +384,16 @@
 
 	.slots.many li {
 		min-height: 130px;
+	}
+
+	.slot-photo {
+		display: block;
+		width: 100%;
+		aspect-ratio: 1;
+		object-fit: cover;
+		object-position: top;
+		border-radius: 3px;
+		box-shadow: 0 0 0 1px rgb(68 46 22 / 0.2);
 	}
 
 	.slot-no {

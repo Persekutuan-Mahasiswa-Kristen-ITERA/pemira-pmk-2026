@@ -1,3 +1,4 @@
 # Salin menjadi .dev.vars untuk pengembangan lokal. JANGAN commit .dev.vars.
-# Di Cloudflare Pages: pnpm wrangler pages secret put ADMIN_EMAILS [--env preview]
-ADMIN_EMAILS=admin@example.com
+# Super admin (boleh mengundang admin lain), dipisah koma.
+# Di Cloudflare Pages: pnpm wrangler pages secret put SUPER_ADMIN_EMAILS [--env preview]
+SUPER_ADMIN_EMAILS=admin@example.com
