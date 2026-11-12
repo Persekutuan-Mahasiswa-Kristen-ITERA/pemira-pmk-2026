@@ -163,6 +163,17 @@ dan footer menulis _mode uji coba publik_. Suara yang masuk selama uji tidak dih
   super admin menekan **Publikasikan hasil sekarang**. Persetujuan tidak bisa dibatalkan. Umumkan mode yang
   dipakai sebelum hari pemilihan.
 
+**Yang ditampilkan kepada publik** (di panel yang sama, hanya super admin, bisa diubah kapan saja):
+
+- **Jumlah suara dan persentase** (bawaan): publik melihat jumlah DPT, jumlah yang sudah memilih,
+  partisipasi, serta jumlah dan persentase suara setiap calon, dan bisa mengunduh CSV surat suara.
+- **Persentase saja**: publik, termasuk calon, hanya melihat persentase suara setiap calon. Jumlah DPT,
+  jumlah yang sudah memilih, partisipasi (sejak pemungutan suara dibuka), jumlah suara, dan CSV surat suara
+  disembunyikan, karena dari angka-angka itu jumlah suara bisa dihitung. Pemilih tetap bisa memeriksa kode
+  tanda terimanya. Admin tetap melihat angka lengkap di halaman Hasil dan Ringkasan, dan tetap bisa mengunduh
+  CSV untuk berita acara. Pilih **sebelum pemungutan suara dibuka**, karena angka partisipasi tampil di
+  beranda selama pemungutan suara berlangsung, lalu umumkan pilihannya.
+
 1. Pemungutan suara tertutup otomatis sesuai jadwal. Pada mode tombol, rekap absensi dan rekonsiliasi kode
    TPS bersama saksi dulu, lalu publikasikan hasil.
 2. Buka halaman **Hasil**. Periksa bersama saksi:

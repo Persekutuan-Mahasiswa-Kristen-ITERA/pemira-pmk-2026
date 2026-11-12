@@ -150,12 +150,45 @@
 			</fieldset>
 			<button class="button button-ghost" type="submit">Simpan mode (super admin)</button>
 		</form>
+		<form method="POST" action="?/resultsDetail" use:enhance class="mode-form">
+			<fieldset>
+				<legend>Yang ditampilkan kepada publik</legend>
+				<label class="choice">
+					<input type="radio" name="detail" value="counts" checked={release.detail === 'counts'} />
+					<span>
+						<strong>Jumlah suara dan persentase.</strong> Publik melihat jumlah DPT, jumlah yang sudah
+						memilih, partisipasi, serta jumlah dan persentase suara setiap calon.
+					</span>
+				</label>
+				<label class="choice">
+					<input
+						type="radio"
+						name="detail"
+						value="percent"
+						checked={release.detail === 'percent'}
+					/>
+					<span>
+						<strong>Persentase saja.</strong> Publik, termasuk calon, hanya melihat persentase suara setiap
+						calon. Jumlah DPT, jumlah yang sudah memilih, dan partisipasi (selama dan sesudah pemungutan
+						suara), jumlah suara, serta CSV surat suara disembunyikan, karena dari angka-angka itu jumlah
+						suara bisa dihitung. Pemilih tetap bisa memeriksa kode tanda terimanya. Admin tetap melihat
+						angka lengkap.
+					</span>
+				</label>
+			</fieldset>
+			<button class="button button-ghost" type="submit">Simpan rincian (super admin)</button>
+		</form>
 	{:else}
 		<p>
 			Mode: <strong
 				>{release.mode === 'auto'
 					? 'tampil otomatis saat ditutup'
 					: 'tunggu tombol Publikasikan'}</strong
+			>. Publik melihat:
+			<strong
+				>{release.detail === 'counts'
+					? 'jumlah suara dan persentase'
+					: 'persentase saja (tanpa jumlah suara, DPT, dan partisipasi)'}</strong
 			>. Hanya super admin yang bisa mengubahnya.
 		</p>
 	{/if}
@@ -198,7 +231,8 @@
 		</div>
 	{/if}
 	<p class="hint">
-		Perubahan mode dan setiap persetujuan tercatat di audit log. Persetujuan tidak bisa dibatalkan.
+		Perubahan mode, rincian, dan setiap persetujuan tercatat di audit log. Persetujuan tidak bisa
+		dibatalkan.
 	</p>
 </div>
 
@@ -273,6 +307,12 @@
 
 	.mode-form .button {
 		margin-top: 14px;
+	}
+
+	.mode-form + .mode-form {
+		margin-top: 18px;
+		padding-top: 18px;
+		border-top: 1px solid var(--line);
 	}
 
 	.publish {

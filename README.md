@@ -81,13 +81,13 @@ hanya didapat dengan salah satu cara berikut, dan keduanya diatur di
 
 ## 👥 Siapa bisa apa
 
-| Peran                                  | Bisa                                                                                                                                                                                                                      | Tidak bisa                                                                                                                        |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| **Publik**                             | Melihat calon, jadwal, dan angka partisipasi. Setelah ditutup: hasil (langsung, atau setelah dipublikasikan bila memakai mode tombol); setelah audit suara dibuka: daftar surat suara dan cek kode.                       | Melihat hasil sebelum pemungutan suara ditutup.                                                                                   |
-| **Pemilih** (NIM terdaftar di DPT)     | Memilih satu kali di TPS dan menerima kode tanda terima.                                                                                                                                                                  | Memilih dari luar TPS, memilih dua kali, atau mengubah pilihan.                                                                   |
-| **Petugas TPS** (diundang super admin) | Membuat kode TPS sekali pakai dan mengecek apakah NIM ada di DPT.                                                                                                                                                         | Membuka panel admin, melihat siapa yang sudah memilih, membuat kode yang terikat ke NIM.                                          |
-| **Admin** (diundang super admin)       | Mengatur jadwal, calon dan foto, serta DPT sebelum dibuka; kode pengecualian (dua admin); tutup darurat; menyetujui publikasi hasil (dua admin); audit log.                                                               | Melihat pilihan siapa pun, melihat daftar siapa yang sudah atau belum memilih (lihat _Batasan_), mengubah suara, membuka kembali. |
-| **Super admin** (`SUPER_ADMIN_EMAILS`) | Semua yang bisa dilakukan admin dan Petugas TPS, mengundang dan mencabut admin serta Petugas TPS, membuat kode pengecualian tanpa admin kedua, memilih mode publikasi hasil, dan mempublikasikan hasil tanpa admin kedua. | Sama dengan admin.                                                                                                                |
+| Peran                                  | Bisa                                                                                                                                                                                                                                                                         | Tidak bisa                                                                                                                        |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Publik**                             | Melihat calon, jadwal, dan angka partisipasi. Setelah ditutup: hasil (langsung, atau setelah dipublikasikan bila memakai mode tombol); setelah audit suara dibuka: daftar surat suara dan cek kode. Pada rincian _persentase saja_: hanya persentase per calon dan cek kode. | Melihat hasil sebelum pemungutan suara ditutup.                                                                                   |
+| **Pemilih** (NIM terdaftar di DPT)     | Memilih satu kali di TPS dan menerima kode tanda terima.                                                                                                                                                                                                                     | Memilih dari luar TPS, memilih dua kali, atau mengubah pilihan.                                                                   |
+| **Petugas TPS** (diundang super admin) | Membuat kode TPS sekali pakai dan mengecek apakah NIM ada di DPT.                                                                                                                                                                                                            | Membuka panel admin, melihat siapa yang sudah memilih, membuat kode yang terikat ke NIM.                                          |
+| **Admin** (diundang super admin)       | Mengatur jadwal, calon dan foto, serta DPT sebelum dibuka; kode pengecualian (dua admin); tutup darurat; menyetujui publikasi hasil (dua admin); audit log.                                                                                                                  | Melihat pilihan siapa pun, melihat daftar siapa yang sudah atau belum memilih (lihat _Batasan_), mengubah suara, membuka kembali. |
+| **Super admin** (`SUPER_ADMIN_EMAILS`) | Semua yang bisa dilakukan admin dan Petugas TPS, mengundang dan mencabut admin serta Petugas TPS, membuat kode pengecualian tanpa admin kedua, memilih mode dan rincian publikasi hasil, dan mempublikasikan hasil tanpa admin kedua.                                        | Sama dengan admin.                                                                                                                |
 
 Semua tindakan admin tercatat di audit log yang tidak bisa diubah atau dihapus.
 
@@ -111,6 +111,14 @@ memeriksa apa pun; langkah berikut disediakan untuk saat ada sengketa hasil. Sia
 4. **Mencocokkan versi**: commit yang tampil di footer situs bisa dibandingkan dengan kode di repo ini.
 5. **Mencocokkan DPT**: panitia mengumumkan sidik jari (SHA-256) DPT saat DPT dikunci; angka yang sama tampil
    di panel admin dan berubah jika DPT diubah sedikit saja.
+
+Super admin juga bisa memilih **rincian _persentase saja_**
+([`migrations/0009_rincian_hasil.sql`](migrations/0009_rincian_hasil.sql)): publik, termasuk calon, hanya
+melihat persentase suara setiap calon. Semua angka yang bisa dipakai menghitung jumlah suara ikut disembunyikan
+dari publik: jumlah DPT, jumlah yang sudah memilih, persentase partisipasi (selama dan sesudah pemungutan
+suara), jumlah suara per calon, dan CSV surat suara. Pada rincian ini langkah 1 dan 2 hanya bisa dilakukan
+panitia dan saksi (admin tetap melihat angka lengkap dan bisa mengunduh CSV untuk berita acara); pemilih tetap
+bisa memeriksa kode tanda terimanya satu per satu.
 
 > [!NOTE]
 > Situs resmi hanya [pemira.pmkitera.web.id](https://pemira.pmkitera.web.id). Situs uji coba (staging)
@@ -150,6 +158,10 @@ Kami mencantumkan batasan sistem secara terbuka:
   super admin mempublikasikannya. Super admin bisa mengubah mode kapan saja, termasuk setelah ditutup, dan
   bisa mempublikasikan sendiri. Mode yang dipakai diumumkan sebelum pemilihan, dan setiap perubahan mode
   serta persetujuan tercatat di audit log.
+- **Jumlah suara bisa disembunyikan dari publik.** Pada rincian _persentase saja_, publik tidak bisa
+  menghitung ulang hasil dari CSV; penghitungan ulang bergantung pada panitia dan saksi yang memegang CSV
+  beserta SHA-256 di berita acara. Rincian yang dipakai diumumkan sebelum pemilihan, dan setiap perubahan
+  tercatat di audit log.
 - **Trigger bisa dilepas oleh pemegang akses database.** Aturan "tidak bisa diubah/dihapus" ditegakkan
   trigger, dan pemegang akses langsung D1 secara teknis bisa melepasnya (seperti yang dilakukan skrip reset
   uji coba publik secara terbuka). Penjaganya: kode tanda terima yang bisa dicek setiap pemilih, CSV surat
