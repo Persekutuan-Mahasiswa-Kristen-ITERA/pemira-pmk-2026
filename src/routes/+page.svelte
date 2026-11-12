@@ -3,8 +3,11 @@
 	import { formatWib as when } from '#lib/time.js';
 	import BallotHead from '#lib/components/BallotHead.svelte';
 	import Countdown from '#lib/components/Countdown.svelte';
+	import Gallery from '#lib/components/Gallery.svelte';
 	import Guilloche from '#lib/components/Guilloche.svelte';
+	import { ACTIVITIES } from '#lib/kegiatan.js';
 	import PhaseStamp from '#lib/components/PhaseStamp.svelte';
+	import { TIMELINE, VOTING_DAY, VOTING_HOURS, timelineStatus } from '#lib/timeline.js';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -87,7 +90,9 @@
 						Pemungutan suara ditutup <strong>{when(election.closesAt)}</strong>
 					</p>
 				{:else}
-					<p class="status-line">Panitia akan mengumumkan waktu pemungutan suara.</p>
+					<p class="status-line">
+						Pemungutan suara di TPS <strong>{VOTING_DAY}, {VOTING_HOURS}</strong>
+					</p>
 				{/if}
 
 				{#if election.phase === 'open' || election.phase === 'closed'}
@@ -125,6 +130,7 @@
 						Lihat hasil dan periksa suaramu <span class="arrow" aria-hidden="true">→</span>
 					</a>
 				{/if}
+				<a class="text-link" href="#timeline">Lihat timeline</a>
 				<a class="text-link" href="#cara">Cara memilih</a>
 			</div>
 		</div>
@@ -156,6 +162,54 @@
 				<PhaseStamp phase={election.phase} />
 			</div>
 		</div>
+	</div>
+</section>
+
+<section class="container timeline" id="timeline" aria-labelledby="timeline-judul">
+	<div class="timeline-head">
+		<p class="eyebrow">Timeline</p>
+		<h2 id="timeline-judul">Jadwal <em>Pemira</em></h2>
+		<p>
+			Semua waktu dalam WIB. Perubahan jadwal diumumkan panitia; jam buka dan tutup pemungutan suara
+			yang berlaku adalah yang tercatat di sistem ini.
+		</p>
+	</div>
+	<ol class="events">
+		{#each TIMELINE as e (e.id)}
+			{@const status = timelineStatus(e, election.now)}
+			<li data-status={status} class:key={e.id === 'pemungutan-suara'}>
+				<span class="dot" aria-hidden="true"></span>
+				<div class="ev-body">
+					<p class="ev-date">
+						<span>{e.date}</span>
+						{#if status === 'today'}
+							<span class="badge">Hari ini</span>
+						{:else if status === 'done'}
+							<span class="badge done">Selesai</span>
+						{/if}
+					</p>
+					<h3>{e.title}</h3>
+					{#if e.time || e.place}
+						<p class="ev-meta">
+							{#if e.time}<span>{e.time}</span>{/if}
+							{#if e.place}<span>{e.place}</span>{/if}
+						</p>
+					{/if}
+					{#if e.note}<p class="ev-note">{e.note}</p>{/if}
+				</div>
+			</li>
+		{/each}
+	</ol>
+</section>
+
+<section class="kegiatan" id="kegiatan" aria-labelledby="kegiatan-judul">
+	<div class="container">
+		<div class="kegiatan-head">
+			<p class="eyebrow">Rangkaian kegiatan</p>
+			<h2 id="kegiatan-judul">Jejak menuju <em>hari pemilihan</em></h2>
+			<p>Dokumentasi kegiatan Pemira sejauh ini. Ketuk foto untuk memperbesar.</p>
+		</div>
+		<Gallery activities={ACTIVITIES} />
 	</div>
 </section>
 
@@ -460,7 +514,179 @@
 		color: var(--gold);
 	}
 
+	/* Timeline */
+	.timeline {
+		display: grid;
+		grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+		gap: 40px clamp(40px, 6vw, 96px);
+		padding-block: clamp(56px, 8vw, 104px);
+		scroll-margin-top: 72px;
+	}
+
+	.timeline-head {
+		align-self: start;
+		position: sticky;
+		top: 120px;
+	}
+
+	.timeline-head > p:last-child {
+		max-width: 40ch;
+		margin-top: 18px;
+		color: var(--ink-soft);
+	}
+
+	.timeline h2 em {
+		color: var(--brown);
+	}
+
+	.events {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.events li {
+		position: relative;
+		padding: 0 0 32px 36px;
+	}
+
+	/* Garis vertikal yang menyambung titik-titik */
+	.events li::before {
+		content: '';
+		position: absolute;
+		top: 8px;
+		bottom: -8px;
+		left: 7px;
+		border-left: 1.5px dashed var(--line);
+	}
+
+	.events li:last-child {
+		padding-bottom: 0;
+	}
+
+	.events li:last-child::before {
+		display: none;
+	}
+
+	.dot {
+		position: absolute;
+		top: 4px;
+		left: 0;
+		width: 16px;
+		height: 16px;
+		border: 2px solid var(--brown);
+		border-radius: 50%;
+		background: var(--paper);
+	}
+
+	.events li[data-status='done'] .dot {
+		border-color: var(--gold-dark);
+		background: var(--gold-dark);
+	}
+
+	.events li[data-status='today'] .dot {
+		border-color: var(--gold);
+		background: var(--gold);
+		box-shadow: 0 0 0 5px rgb(197 154 39 / 0.25);
+	}
+
+	.ev-date {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 4px 10px;
+		font-size: 12px;
+		font-weight: 800;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--ink-muted);
+	}
+
+	.badge {
+		padding: 2px 8px;
+		border-radius: 999px;
+		background: var(--gold);
+		font-size: 10px;
+		letter-spacing: 0.12em;
+		color: var(--ink);
+	}
+
+	.badge.done {
+		background: var(--sand);
+		color: var(--brown-dark);
+	}
+
+	.events h3 {
+		margin-top: 6px;
+		font-size: 24px;
+		font-weight: 500;
+		line-height: 1.15;
+	}
+
+	.events li[data-status='done'] h3 {
+		color: var(--ink-soft);
+	}
+
+	.ev-meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 2px 14px;
+		margin-top: 6px;
+		font-size: 15px;
+		font-weight: 700;
+		color: var(--brown);
+	}
+
+	.ev-note {
+		margin-top: 4px;
+		max-width: 52ch;
+		font-size: 15px;
+		color: var(--ink-soft);
+	}
+
+	/* Hari pemungutan suara ditonjolkan */
+	.key .ev-body {
+		margin-top: -14px;
+		padding: 14px 18px 16px;
+		border-radius: var(--radius-sm);
+		background: var(--paper-light);
+		box-shadow:
+			var(--shadow-soft),
+			inset 0 0 0 1px rgb(215 201 179 / 0.8);
+	}
+
+	.key h3 {
+		font-size: 30px;
+	}
+
+	/* Rangkaian kegiatan */
+	.kegiatan {
+		position: relative;
+		padding-block: clamp(56px, 8vw, 104px);
+		background:
+			radial-gradient(circle at 1px 1px, rgb(98 67 31 / 0.12) 1px, transparent 0) 0 0 / 22px 22px,
+			linear-gradient(180deg, #ebe0c9, var(--paper));
+		border-top: 1px solid var(--line);
+		scroll-margin-top: 72px;
+	}
+
+	.kegiatan-head {
+		max-width: 640px;
+		margin-bottom: 36px;
+	}
+
+	.kegiatan-head > p:last-child {
+		margin-top: 16px;
+		color: var(--ink-soft);
+	}
+
+	.kegiatan h2 em {
+		color: var(--brown);
+	}
+
 	.steps-band h2,
+	.kegiatan h2,
+	.timeline h2,
 	.trust h2 {
 		margin-top: 14px;
 		font-size: clamp(36px, 5vw, 60px);
@@ -569,12 +795,17 @@
 
 	@media (max-width: 900px) {
 		.hero-grid,
+		.timeline,
 		.trust {
 			grid-template-columns: 1fr;
 		}
 
 		.hero-ballot {
 			max-width: 520px;
+		}
+
+		.timeline-head {
+			position: static;
 		}
 
 		.steps {

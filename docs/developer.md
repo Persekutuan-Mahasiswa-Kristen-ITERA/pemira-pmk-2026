@@ -72,6 +72,8 @@ Browser ──► Cloudflare Pages (SvelteKit, server-side) ──► Cloudflare
 | `src/lib/server/candidates.ts` | URL foto per calon                                                                                                                                                                                            |
 | `src/lib/resize-image.ts`      | Memperkecil foto di browser sebelum diunggah                                                                                                                                                                  |
 | `src/lib/components/`          | Komponen tampilan bersama (lihat [Tampilan](#tampilan))                                                                                                                                                       |
+| `src/lib/timeline.ts`          | Timeline beranda (#timeline): jadwal Pemira statis; jam yang berlaku tetap `election_config`                                                                                                                  |
+| `src/lib/kegiatan.ts`          | Galeri rangkaian kegiatan (#kegiatan); foto di `static/dokumentasi/<id>/` (+ `kecil/`)                                                                                                                        |
 | `src/routes/+layout.*`         | Header, footer, pita "uji coba", dan label database                                                                                                                                                           |
 | `src/routes/foto-calon/`       | Foto calon (publik, cache panjang lewat URL berversi)                                                                                                                                                         |
 | `src/lib/server/results.ts`    | Rekap, daftar surat suara, CSV + SHA-256                                                                                                                                                                      |
@@ -116,7 +118,7 @@ Tampilan memakai motif **surat suara kertas**. Pertahankan arah ini saat menamba
 - **Huruf:** Newsreader untuk judul (miring untuk penekanan, mis. `<em>`), Nunito Sans untuk teks, IBM Plex
   Mono untuk kode tanda terima, hash, dan angka.
 - **Komponen bersama** di `src/lib/components/`: `BallotHead` (kepala surat suara), `Guilloche` (pola cetak
-  pengaman), `PhaseStamp` (stempel tahap), `Countdown`, `PunchHole` (bekas coblosan). Logo PMK ITERA: `src/lib/assets/logo-pmk.png` (juga favicon).
+  pengaman), `PhaseStamp` (stempel tahap), `Countdown`, `PunchHole` (bekas coblosan), `Gallery` (cetakan foto + lightbox). Logo PMK ITERA: `src/lib/assets/logo-pmk.png` (juga favicon).
 - **Kelas global** di `src/app.css`: `.button` (+ `-gold`, `-ghost`, `-danger`), `.sheet` (lembar kertas),
   `.eyebrow`, `.msg-error`/`.msg-ok`, `.rise` (animasi masuk), `.visually-hidden`.
 - **Netral terhadap calon.** Jangan pernah menonjolkan atau menandai calon tertentu sebelum hasil diumumkan

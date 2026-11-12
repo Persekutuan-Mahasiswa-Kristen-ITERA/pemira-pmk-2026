@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import logo from '#lib/assets/logo-pmk.png';
+	import { VOTING_DAY as ELECTION_DAY } from '#lib/timeline.js';
 	import type { LayoutProps } from './$types';
 
 	let { children, data }: LayoutProps = $props();
@@ -14,9 +15,8 @@
 	let path = $derived(page.url.pathname);
 
 	const PRODUCTION_URL = 'https://pemira.pmkitera.web.id';
-	// Jadwal reset uji coba publik (scripts/reset-uji-coba.sql) dan hari pemilihan resmi.
+	// Jadwal reset uji coba publik (scripts/reset-uji-coba.sql). Hari pemilihan resmi: #lib/timeline.
 	const PUBLIC_TEST_RESET = 'Rabu, 18 November 2026 pukul 20.00 WIB';
-	const ELECTION_DAY = 'Kamis, 19 November 2026';
 	const ENV_LABEL = {
 		production: 'Resmi (production)',
 		staging: 'Uji coba (staging)',
@@ -76,6 +76,8 @@
 		</a>
 
 		<nav class="nav" aria-label="Navigasi utama">
+			<a class="nav-jump" href="{resolve('/')}#timeline">Timeline</a>
+			<a class="nav-jump" href="{resolve('/')}#kegiatan">Kegiatan</a>
 			<a href={resolve('/hasil')} aria-current={path === '/hasil' ? 'page' : undefined}>Hasil</a>
 			{#if data.isOfficer}
 				<a href={resolve('/petugas')} aria-current={path === '/petugas' ? 'page' : undefined}
@@ -298,15 +300,45 @@
 		}
 	}
 
-	@media (max-width: 380px) {
+	/* Di layar sempit logo saja sudah cukup sebagai tautan beranda. */
+	@media (max-width: 600px) {
 		.brand-text {
+			display: none;
+		}
+
+		.topbar-inner {
+			gap: 8px;
+		}
+
+		.nav > a {
+			padding-inline: 8px;
+		}
+
+		.nav > a.nav-cta {
+			padding-inline: 14px;
+		}
+	}
+
+	/* Panitia yang masuk punya menu Petugas/Admin; tautan lompat ke beranda disembunyikan. */
+	@media (max-width: 600px) {
+		.crowded .nav-jump {
 			display: none;
 		}
 	}
 
-	@media (max-width: 520px) {
-		.crowded .brand-text {
-			display: none;
+	@media (max-width: 350px) {
+		.brand-logo {
+			width: 36px;
+			height: 36px;
+		}
+
+		.nav {
+			gap: 0;
+			font-size: 13px;
+		}
+
+		.nav > a {
+			padding-inline: 6px;
 		}
 	}
 
