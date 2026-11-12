@@ -90,6 +90,9 @@ lainnya, foto terkunci begitu pemilihan dibuka, jadi pastikan sudah final sebelu
 5. **Admin → Calon**: masukkan calon beserta nomor urut, visi, misi, dan foto. Minta setiap calon memeriksa
    tulisan dan fotonya di beranda.
 6. **Admin → Ringkasan & jadwal**: atur waktu buka dan tutup (WIB).
+7. **Timeline dan foto kegiatan di beranda** tidak diatur dari Admin. Kirim jadwal (tanggal, jam, tempat)
+   dan foto dokumentasi ke developer, yang memperbaruinya lewat deploy. Jam pemungutan suara di timeline
+   harus sama dengan jadwal di sistem (langkah 6); yang berlaku adalah jadwal di sistem.
 
 > Begitu waktu buka tiba, **DPT, daftar calon (termasuk foto), dan jadwal terkunci permanen** oleh database. Pastikan
 > semuanya final sebelum itu.
