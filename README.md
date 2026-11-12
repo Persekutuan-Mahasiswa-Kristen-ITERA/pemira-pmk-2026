@@ -81,13 +81,13 @@ hanya didapat dengan salah satu cara berikut, dan keduanya diatur di
 
 ## 👥 Siapa bisa apa
 
-| Peran                                  | Bisa                                                                                                                                               | Tidak bisa                                                                                                                 |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| **Publik**                             | Melihat calon, jadwal, dan angka partisipasi. Setelah ditutup: hasil; setelah audit suara dibuka: daftar surat suara dan cek kode.                 | Melihat hasil sebelum pemungutan suara ditutup.                                                                            |
-| **Pemilih** (NIM terdaftar di DPT)     | Memilih satu kali di TPS dan menerima kode tanda terima.                                                                                           | Memilih dari luar TPS, memilih dua kali, atau mengubah pilihan.                                                            |
-| **Petugas TPS** (diundang super admin) | Membuat kode TPS sekali pakai dan mengecek apakah NIM ada di DPT.                                                                                  | Membuka panel admin, melihat siapa yang sudah memilih, membuat kode yang terikat ke NIM.                                   |
-| **Admin** (diundang super admin)       | Mengatur jadwal, calon dan foto, serta DPT sebelum dibuka; kode pengecualian (dua admin); tutup darurat; audit log.                                | Melihat pilihan siapa pun, melihat siapa yang sudah atau belum memilih (hanya jumlahnya), mengubah suara, membuka kembali. |
-| **Super admin** (`SUPER_ADMIN_EMAILS`) | Semua yang bisa dilakukan admin dan Petugas TPS, mengundang dan mencabut admin serta Petugas TPS, dan membuat kode pengecualian tanpa admin kedua. | Sama dengan admin.                                                                                                         |
+| Peran                                  | Bisa                                                                                                                                               | Tidak bisa                                                                                                                        |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Publik**                             | Melihat calon, jadwal, dan angka partisipasi. Setelah ditutup: hasil; setelah audit suara dibuka: daftar surat suara dan cek kode.                 | Melihat hasil sebelum pemungutan suara ditutup.                                                                                   |
+| **Pemilih** (NIM terdaftar di DPT)     | Memilih satu kali di TPS dan menerima kode tanda terima.                                                                                           | Memilih dari luar TPS, memilih dua kali, atau mengubah pilihan.                                                                   |
+| **Petugas TPS** (diundang super admin) | Membuat kode TPS sekali pakai dan mengecek apakah NIM ada di DPT.                                                                                  | Membuka panel admin, melihat siapa yang sudah memilih, membuat kode yang terikat ke NIM.                                          |
+| **Admin** (diundang super admin)       | Mengatur jadwal, calon dan foto, serta DPT sebelum dibuka; kode pengecualian (dua admin); tutup darurat; audit log.                                | Melihat pilihan siapa pun, melihat daftar siapa yang sudah atau belum memilih (lihat _Batasan_), mengubah suara, membuka kembali. |
+| **Super admin** (`SUPER_ADMIN_EMAILS`) | Semua yang bisa dilakukan admin dan Petugas TPS, mengundang dan mencabut admin serta Petugas TPS, dan membuat kode pengecualian tanpa admin kedua. | Sama dengan admin.                                                                                                                |
 
 Semua tindakan admin tercatat di audit log yang tidak bisa diubah atau dihapus.
 
@@ -135,10 +135,14 @@ Kami mencantumkan batasan sistem secara terbuka:
   bisa disanggah.
 - **Kode tanda terima** bisa dipakai pemilih untuk menunjukkan pilihannya kepada orang lain, misalnya lewat
   tangkapan layar. Meminta kode tanda terima orang lain dilarang oleh tata tertib.
-- **Siapa yang sudah memilih** tidak ditampilkan di web, termasuk kepada admin. Kehadiran di TPS tercatat
-  di absensi kertas, seperti pemilu biasa. Orang yang memegang akses langsung ke database (pengelola akun
-  Cloudflare) masih bisa melihat NIM yang sudah memilih, tetapi tidak pilihannya, karena surat suara disimpan
-  terpisah tanpa NIM.
+- **Siapa yang sudah memilih** tidak ditampilkan sebagai daftar di web, termasuk kepada admin. Kehadiran di
+  TPS tercatat di absensi kertas, seperti pemilu biasa. Namun admin yang mengajukan kode pengecualian untuk
+  sebuah NIM akan diberi tahu bila NIM itu sudah memilih, sehingga admin bisa mengecek NIM satu per satu.
+- **Pemegang akses langsung database** (pengelola akun Cloudflare: Martin Manullang) bisa melihat NIM yang
+  sudah memilih. Surat suara disimpan tanpa NIM, tetapi orang yang memantau database terus-menerus selama
+  pemilihan bisa mencocokkan keduanya dari waktu masuknya. Karena itu akses langsung dibatasi pada orang
+  tersebut, perintah ke database selama pemilihan hanya dijalankan dalam keadaan darurat dan disaksikan, dan
+  log aktivitas Cloudflare dilampirkan pada berita acara.
 - **Trigger bisa dilepas oleh pemegang akses database.** Aturan "tidak bisa diubah/dihapus" ditegakkan
   trigger, dan pemegang akses langsung D1 secara teknis bisa melepasnya (seperti yang dilakukan skrip reset
   uji coba publik secara terbuka). Penjaganya: kode tanda terima yang bisa dicek setiap pemilih, CSV surat
