@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="src/lib/assets/favicon.svg" alt="" width="72" height="72">
+<img src="src/lib/assets/logo-pmk.png" alt="Logo PMK ITERA" width="72" height="72">
 
 # Pemira PMK ITERA 2027
 
@@ -24,14 +24,14 @@ Kode sumbernya publik supaya siapa pun bisa mengaudit cara suara dicatat dan dih
 
 ## ✨ Prinsip
 
-| Prinsip                      | Penerapan                                                                                                                       |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| 🎓 **Hanya pemilih sah**     | Login Google dengan email `nama.nim@student.itera.ac.id`; NIM di email harus terdaftar di DPT (mahasiswa Kristen aktif).        |
-| 🏫 **Hanya di TPS**          | Surat suara baru terbuka dengan kode TPS sekali pakai dari petugas (berlaku 2 menit), lalu pemilih punya 5 menit untuk memilih. |
-| ☝️ **Satu orang satu suara** | Setiap NIM hanya bisa tercatat sekali; penanda "sudah memilih" dan surat suara disimpan dalam satu transaksi.                   |
-| 🤫 **Rahasia**               | Identitas (`voted`) dan isi suara (`ballots`) disimpan terpisah tanpa penghubung, tanpa timestamp, tanpa urutan.                |
-| 🔍 **Bisa diverifikasi**     | Setiap pemilih mendapat kode tanda terima acak. Setelah ditutup, daftar `kode → calon` dipublikasikan untuk dicek dan dihitung. |
-| 🔒 **Tidak bisa diubah**     | Surat suara, penanda sudah memilih, dan audit log tidak bisa diubah/dihapus. DPT, calon, dan jadwal terkunci saat dibuka.       |
+| Prinsip                      | Penerapan                                                                                                                                              |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 🎓 **Hanya pemilih sah**     | Login Google dengan email `nama.nim@student.itera.ac.id`; NIM di email harus terdaftar di DPT (mahasiswa Kristen aktif).                               |
+| 🏫 **Hanya di TPS**          | Surat suara baru terbuka dengan kode TPS sekali pakai dari petugas (berlaku 2 menit), lalu pemilih punya 5 menit untuk memilih.                        |
+| ☝️ **Satu orang satu suara** | Setiap NIM hanya bisa tercatat sekali; penanda "sudah memilih" dan surat suara disimpan dalam satu transaksi.                                          |
+| 🤫 **Rahasia**               | Identitas (`voted`) dan isi suara (`ballots`) disimpan terpisah tanpa penghubung, tanpa timestamp, tanpa urutan.                                       |
+| 🔍 **Bisa diverifikasi**     | Setiap pemilih mendapat kode tanda terima acak. Setelah ditutup dan audit suara dibuka, daftar `kode → calon` dipublikasikan untuk dicek dan dihitung. |
+| 🔒 **Tidak bisa diubah**     | Surat suara, penanda sudah memilih, dan audit log tidak bisa diubah/dihapus. DPT, calon, dan jadwal terkunci saat dibuka.                              |
 
 > [!IMPORTANT]
 > Aturan-aturan ini ditegakkan **di database** lewat trigger SQL, bukan hanya di kode aplikasi.
@@ -56,7 +56,9 @@ sequenceDiagram
     S->>DB: Satu transaksi: catat "sudah memilih" (NIM)<br/>+ surat suara (kode acak → calon), tanpa penghubung,<br/>+ hapus izin memilih
     S-->>P: Kode tanda terima, mis. 7KQ2M-X9D4P (hanya sekali), keluar otomatis 20 detik
     Note over S,DB: Setelah ditutup
-    S-->>P: Rekap + daftar semua kode → calon (CSV + SHA-256)
+    S-->>P: Perolehan suara per calon
+    Note over S,DB: Setelah panitia membuka audit suara
+    S-->>P: Daftar semua kode → calon (CSV + SHA-256)
     P->>S: Cek kode sendiri di halaman Hasil
 ```
 
@@ -72,15 +74,16 @@ hanya didapat dengan salah satu cara berikut, dan keduanya diatur di
   atas nama mahasiswa yang tidak hadir.
 - **Kode pengecualian**: untuk pemilih yang benar-benar tidak bisa login Google. Kode terikat ke satu NIM,
   diajukan satu admin, dan disetujui **admin lain** (database menolak penyetuju yang sama). Super admin
-  boleh langsung membuat kode tanpa admin kedua; kode seperti itu ditandai di daftar pengajuan dan di audit
-  log. Kode berlaku 5 menit dan sekali pakai. Setelah ditutup, daftar NIM yang memakai jalur ini diumumkan
-  di `/hasil`, tanpa pilihannya.
+  boleh langsung membuat kode tanpa admin kedua (diatur di
+  [`migrations/0007_super_admin_kode.sql`](migrations/0007_super_admin_kode.sql)); kode seperti itu ditandai
+  di daftar pengajuan dan di audit log. Kode berlaku 5 menit dan sekali pakai. Setelah ditutup, daftar NIM
+  yang memakai jalur ini diumumkan di `/hasil`, tanpa pilihannya.
 
 ## 👥 Siapa bisa apa
 
 | Peran                                  | Bisa                                                                                                                                               | Tidak bisa                                                                                                                 |
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| **Publik**                             | Melihat calon, jadwal, dan angka partisipasi. Setelah ditutup: hasil, daftar surat suara, cek kode.                                                | Melihat hasil sebelum pemungutan suara ditutup.                                                                            |
+| **Publik**                             | Melihat calon, jadwal, dan angka partisipasi. Setelah ditutup: hasil; setelah audit suara dibuka: daftar surat suara dan cek kode.                 | Melihat hasil sebelum pemungutan suara ditutup.                                                                            |
 | **Pemilih** (NIM terdaftar di DPT)     | Memilih satu kali di TPS dan menerima kode tanda terima.                                                                                           | Memilih dari luar TPS, memilih dua kali, atau mengubah pilihan.                                                            |
 | **Petugas TPS** (diundang super admin) | Membuat kode TPS sekali pakai dan mengecek apakah NIM ada di DPT.                                                                                  | Membuka panel admin, melihat siapa yang sudah memilih, membuat kode yang terikat ke NIM.                                   |
 | **Admin** (diundang super admin)       | Mengatur jadwal, calon dan foto, serta DPT sebelum dibuka; kode pengecualian (dua admin); tutup darurat; audit log.                                | Melihat pilihan siapa pun, melihat siapa yang sudah atau belum memilih (hanya jumlahnya), mengubah suara, membuka kembali. |
@@ -110,6 +113,12 @@ memeriksa apa pun; langkah berikut disediakan untuk saat ada sengketa hasil. Sia
 > Situs resmi hanya [pemira.pmkitera.web.id](https://pemira.pmkitera.web.id). Situs uji coba (staging)
 > memakai database terpisah dan selalu ditandai pita kuning bertuliskan **"Situs uji coba"**; footer setiap
 > situs menyebut database yang dipakai.
+>
+> Sampai **Rabu, 18 November 2026 pukul 20.00 WIB**, situs resmi juga dipakai untuk **uji coba publik** dan
+> ditandai pita **"Uji coba publik"**. Suara selama masa itu tidak dihitung: semua data pemilihan uji (surat
+> suara, penanda sudah memilih, kode, audit log) dihapus pada waktu tersebut dengan
+> [`scripts/reset-uji-coba.sql`](scripts/reset-uji-coba.sql), yang sekaligus mematikan pita. Skrip itu
+> menolak berjalan setelah pita mati, sehingga tidak bisa menyentuh suara pemilihan resmi.
 
 ## ⚠️ Batasan yang diketahui
 
@@ -119,14 +128,23 @@ Kami mencantumkan batasan sistem secara terbuka:
   itu petugas mengetik kode sendiri di HP pemilih yang sudah berada di area bilik. Petugas yang nakal juga
   bisa membuat kode untuk teman di luar TPS (teman itu tetap harus login dengan akunnya sendiri). Hal ini
   terlihat saat rekonsiliasi: jumlah kode TPS yang dipakai dicocokkan dengan jumlah tanda tangan absensi.
-- **Kode pengecualian** sepenuhnya bergantung pada kejujuran dua admin, karena tidak ada login Google. Karena
-  itu daftar NIM-nya diumumkan setelah pemilihan supaya bisa disanggah.
+- **Kode pengecualian** sepenuhnya bergantung pada kejujuran admin, karena tidak ada login Google. Kode
+  biasa butuh dua admin, tetapi **super admin bisa membuat kode sendiri**, sehingga satu super admin secara
+  teknis bisa memilih atas nama pemilih di DPT yang belum memilih. Karena itu setiap kode tercatat di audit
+  log (kode super admin ditandai), dan daftar NIM yang memakai jalur ini diumumkan setelah pemilihan supaya
+  bisa disanggah.
 - **Kode tanda terima** bisa dipakai pemilih untuk menunjukkan pilihannya kepada orang lain, misalnya lewat
   tangkapan layar. Meminta kode tanda terima orang lain dilarang oleh tata tertib.
 - **Siapa yang sudah memilih** tidak ditampilkan di web, termasuk kepada admin. Kehadiran di TPS tercatat
   di absensi kertas, seperti pemilu biasa. Orang yang memegang akses langsung ke database (pengelola akun
   Cloudflare) masih bisa melihat NIM yang sudah memilih, tetapi tidak pilihannya, karena surat suara disimpan
   terpisah tanpa NIM.
+- **Trigger bisa dilepas oleh pemegang akses database.** Aturan "tidak bisa diubah/dihapus" ditegakkan
+  trigger, dan pemegang akses langsung D1 secara teknis bisa melepasnya (seperti yang dilakukan skrip reset
+  uji coba publik secara terbuka). Penjaganya: kode tanda terima yang bisa dicek setiap pemilih, CSV surat
+  suara beserta SHA-256 di berita acara, dan pencocokan jumlah suara dengan absensi TPS.
+- **Tidak ada rate limit, captcha, maupun Content-Security-Policy.** Penyalahgunaan dibatasi oleh kewajiban
+  memilih di TPS dengan kode sekali pakai, bukan oleh pembatasan jumlah permintaan.
 
 ## 📋 Untuk panitia
 
