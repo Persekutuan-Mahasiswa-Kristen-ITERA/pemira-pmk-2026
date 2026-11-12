@@ -15,7 +15,8 @@ yang ditandai **(developer)**.
 Ada tiga peran di aplikasi:
 
 - **Super admin**: email di secret `SUPER_ADMIN_EMAILS` (diatur developer). Hanya super admin yang bisa
-  mengundang dan mencabut admin serta Petugas TPS lewat menu **Panitia** di panel admin.
+  mengundang dan mencabut admin serta Petugas TPS lewat menu **Panitia** di panel admin. Super admin juga
+  bisa membuat kode TPS (menu **Petugas**) dan membuat kode pengecualian sendiri tanpa admin kedua.
 - **Admin**: akun Google yang diundang super admin. Admin bisa mengelola jadwal, calon (termasuk foto), DPT,
   dan kode pengecualian, tetapi tidak bisa mengundang admin lain.
 - **Petugas TPS**: akun Google yang diundang super admin. Petugas hanya bisa membuat kode TPS dan mengecek
@@ -55,6 +56,11 @@ TIK. Jika akunnya benar-benar tidak bisa dipakai:
    muncul sekali, berlaku 5 menit, dan sekali pakai. Admin yang mengajukan tidak bisa menyetujui
    pengajuannya sendiri.
 3. Admin mengetik kode di perangkat pemilih: **Masuk → "Tidak bisa masuk dengan Google?"**.
+
+**Super admin** bisa melewati langkah 2: isi NIM dan alasan, lalu tekan **Buat kode langsung (super
+admin)**. Kode langsung muncul (5 menit, sekali pakai). Di daftar pengajuan dan audit log
+(`exception.issue`) kode ini ditandai sebagai dibuat langsung oleh super admin, jadi saksi tetap bisa
+memeriksanya.
 
 Semua langkah tercatat di audit log. Setelah pemilihan ditutup, daftar NIM yang memakai jalur ini muncul di
 halaman Hasil, tanpa pilihannya. Gunakan jalur ini hanya untuk pengecualian, dan tulis aturannya di tata
@@ -96,7 +102,7 @@ lainnya, foto terkunci begitu pemilihan dibuka, jadi pastikan sudah final sebelu
 3. Panitia dan saksi mencoba alur TPS lengkap: petugas membuat kode TPS, pemilih login di HP sendiri dan
    memilih, menyimpan kode tanda terima, mencoba memilih dua kali (harus ditolak), mencoba kode yang sudah
    lewat 2 menit (harus ditolak), lalu memeriksa kode di halaman Hasil setelah ditutup. Coba juga jalur kode
-   pengecualian dengan dua admin.
+   pengecualian dengan dua admin dan dengan super admin sendiri.
 4. **Gladi login**: login 15–20 akun berturut-turut di laptop TPS, di jaringan kampus, untuk melihat apakah
    Google meminta verifikasi tambahan. Beri tahu UPA TIK bahwa akan ada banyak login dari satu tempat.
 5. Uji juga **tutup darurat** di staging, supaya panitia tahu caranya.

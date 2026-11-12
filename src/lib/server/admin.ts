@@ -20,10 +20,18 @@ export function requireSuperAdmin(locals: App.Locals): AuthUser {
 	return user;
 }
 
-/** Hanya Petugas TPS (diundang super admin), untuk halaman /petugas. */
+/** Boleh membuat kode TPS: Petugas TPS atau super admin. */
+export function canMakeBoothCodes(locals: App.Locals): boolean {
+	return locals.officer || locals.role === 'super';
+}
+
+/**
+ * Hanya Petugas TPS (diundang super admin) atau super admin, untuk halaman /petugas.
+ * Admin biasa tetap ditolak.
+ */
 export function requireOfficer(locals: App.Locals): AuthUser {
 	if (!locals.user) redirect(303, '/masuk');
-	if (!locals.officer) error(403, 'Halaman ini khusus Petugas TPS.');
+	if (!canMakeBoothCodes(locals)) error(403, 'Halaman ini khusus Petugas TPS.');
 	return locals.user;
 }
 

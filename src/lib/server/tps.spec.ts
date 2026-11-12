@@ -8,6 +8,7 @@ import {
 	cancelException,
 	generateCode,
 	getPass,
+	issueExceptionDirect,
 	listExceptions,
 	normalizeCode,
 	redeemBoothCode,
@@ -23,6 +24,7 @@ const OUTSIDER = '122140099';
 const OFFICER = 'petugas@gmail.com';
 const ADMIN_A = 'a@itera.ac.id';
 const ADMIN_B = 'b@itera.ac.id';
+const SUPER = 'super@itera.ac.id';
 
 let raw: DatabaseSync;
 let db: D1Database;
@@ -263,5 +265,139 @@ describe('kode pengecualian', () => {
 		expect(() => raw.exec('DELETE FROM booth_codes')).not.toThrow();
 		await newBoothCode();
 		expect(() => raw.exec('DELETE FROM booth_codes')).toThrow(/booth_codes_immutable/);
+	});
+});
+
+describe('kode pengecualian langsung dari super admin', () => {
+	it('dibuat tanpa admin kedua, lalu membuka satu suara tanpa login Google', async () => {
+		open();
+		const issued = await issueExceptionDirect(db, ALICE, 'Akun dinonaktifkan', SUPER);
+		expect(issued).toMatchObject({ ok: true, name: 'Alice' });
+		if (!issued.ok) return;
+		expect(issued.code).toMatch(/^[0-9A-Z]{4}-[0-9A-Z]{4}$/);
+
+		const [row] = await listExceptions(db);
+		expect(row).toMatchObject({
+			status: 'active',
+			solo: true,
+			requestedBy: SUPER,
+			approvedBy: SUPER
+		});
+		// Sudah disetujui: tidak bisa "disetujui" lagi oleh siapa pun.
+		expect(await approveException(db, issued.id, ADMIN_B)).toEqual({
+			ok: false,
+			reason: 'not_pending'
+		});
+
+		const redeemed = await redeemExceptionCode(db, issued.code);
+		expect(redeemed).toMatchObject({ ok: true, nim: ALICE });
+		expect(await redeemExceptionCode(db, issued.code)).toEqual({
+			ok: false,
+			reason: 'invalid_code'
+		});
+		expect(await castVote(db, ALICE, 1)).toMatchObject({ ok: true });
+		expect(await usedExceptionNims(db)).toEqual([ALICE]);
+	});
+
+	it('tidak menyimpan kode, hanya hash-nya', async () => {
+		open();
+		const issued = await issueExceptionDirect(db, ALICE, 'Akun terkunci', SUPER);
+		if (!issued.ok) throw new Error('gagal');
+		const stored = raw.prepare('SELECT code_hash FROM exception_codes').get() as {
+			code_hash: string;
+		};
+		expect(stored.code_hash).toMatch(/^[0-9a-f]{64}$/);
+		expect(JSON.stringify(raw.prepare('SELECT * FROM exception_codes').all())).not.toContain(
+			issued.code.replace('-', '')
+		);
+	});
+
+	it('menolak NIM di luar DPT, yang sudah memilih, atau saat tidak dibuka', async () => {
+		await expect(issueExceptionDirect(db, ALICE, 'Akun terkunci', SUPER)).rejects.toThrow(
+			/voting_closed/
+		);
+		open();
+		expect(await issueExceptionDirect(db, OUTSIDER, 'Akun terkunci', SUPER)).toEqual({
+			ok: false,
+			reason: 'not_eligible'
+		});
+		const code = await newBoothCode();
+		await redeemBoothCode(db, BOB, code);
+		await castVote(db, BOB, 1);
+		expect(await issueExceptionDirect(db, BOB, 'Akun terkunci', SUPER)).toEqual({
+			ok: false,
+			reason: 'already_voted'
+		});
+	});
+
+	it('bisa dibatalkan sebelum dipakai', async () => {
+		open();
+		const issued = await issueExceptionDirect(db, ALICE, 'Akun terkunci', SUPER);
+		if (!issued.ok) throw new Error('gagal');
+		expect(await cancelException(db, issued.id)).toBe(ALICE);
+		expect(await redeemExceptionCode(db, issued.code)).toEqual({
+			ok: false,
+			reason: 'invalid_code'
+		});
+	});
+
+	it('database tetap mewajibkan dua admin untuk baris biasa', async () => {
+		open();
+		const insert = (solo: number, approvedBy: string | null) => () =>
+			raw
+				.prepare(
+					`INSERT INTO exception_codes
+					 (id, nim, reason, requested_by, approved_by, approved_at, code_hash, expires_at, solo)
+					 VALUES (?, ?, 'Akun terkunci', ?, ?, CASE WHEN ?4 IS NULL THEN NULL ELSE unixepoch() END,
+					         CASE WHEN ?4 IS NULL THEN NULL ELSE ? END,
+					         CASE WHEN ?4 IS NULL THEN NULL ELSE unixepoch() + 300 END, ?)`
+				)
+				.run(crypto.randomUUID(), ALICE, ADMIN_A, approvedBy, '2'.repeat(64), solo);
+		// Baris biasa yang disetujui pengajunya sendiri.
+		expect(insert(0, ADMIN_A)).toThrow(/CHECK/);
+		// Baris solo dengan penyetuju berbeda, atau solo yang masih menunggu.
+		expect(insert(1, ADMIN_B)).toThrow(/CHECK/);
+		expect(insert(1, null)).toThrow(/CHECK/);
+		// Kontrol: bentuk yang sah tetap diterima.
+		expect(insert(0, ADMIN_B)).not.toThrow();
+		expect(() =>
+			raw
+				.prepare(
+					`INSERT INTO exception_codes
+					 (id, nim, reason, requested_by, approved_by, approved_at, code_hash, expires_at, solo)
+					 VALUES (?, ?, 'Akun terkunci', ?, ?, unixepoch(), ?, unixepoch() + 300, 1)`
+				)
+				.run(crypto.randomUUID(), BOB, SUPER, SUPER, '4'.repeat(64))
+		).not.toThrow();
+	});
+
+	it('pengajuan biasa tidak bisa diubah menjadi solo lalu disetujui sendiri', async () => {
+		open();
+		const req = await requestException(db, ALICE, 'Akun terkunci', ADMIN_A);
+		if (!req.ok) throw new Error('pengajuan gagal');
+		expect(() =>
+			raw
+				.prepare(
+					`UPDATE exception_codes SET solo = 1, approved_by = requested_by,
+					 approved_at = unixepoch(), code_hash = ?, expires_at = unixepoch() + 300 WHERE id = ?`
+				)
+				.run('3'.repeat(64), req.id)
+		).toThrow(/exception_codes_immutable/);
+		expect(() =>
+			raw.prepare('UPDATE exception_codes SET solo = 1 WHERE id = ?').run(req.id)
+		).toThrow(/exception_codes_immutable/);
+	});
+
+	it('identitas kode solo tidak bisa diubah atau dihapus', async () => {
+		open();
+		const issued = await issueExceptionDirect(db, ALICE, 'Akun terkunci', SUPER);
+		if (!issued.ok) throw new Error('gagal');
+		expect(() =>
+			raw.prepare('UPDATE exception_codes SET solo = 0 WHERE id = ?').run(issued.id)
+		).toThrow(/exception_codes_immutable/);
+		expect(() =>
+			raw.prepare('UPDATE exception_codes SET nim = ? WHERE id = ?').run(BOB, issued.id)
+		).toThrow(/exception_codes_immutable/);
+		expect(() => raw.exec('DELETE FROM exception_codes')).toThrow(/exception_codes_immutable/);
 	});
 });

@@ -1,5 +1,6 @@
 import { env } from 'cloudflare:workers';
 import { dev } from '$app/env';
+import { canMakeBoothCodes } from '#lib/server/admin.js';
 import { DEMO_MODE } from '#lib/server/demo.js';
 import { getDb } from '#lib/server/db.js';
 import { isPublicTest } from '#lib/server/election.js';
@@ -13,7 +14,8 @@ export const load: LayoutServerLoad = async ({ locals }) => ({
 	userEmail:
 		locals.user?.email ?? (locals.pass?.via === 'exception' ? `NIM ${locals.pass.nim}` : null),
 	isAdmin: locals.role !== null,
-	isOfficer: locals.officer,
+	// Menu Petugas: Petugas TPS dan super admin (keduanya boleh membuat kode TPS).
+	isOfficer: canMakeBoothCodes(locals),
 	appEnv: appEnv(env.APP_ENV),
 	/** Uji coba publik di database ini: pita tampil sampai `scripts/reset-uji-coba.sql` dijalankan. */
 	publicTest: await isPublicTest(getDb()),
