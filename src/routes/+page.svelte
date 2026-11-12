@@ -34,6 +34,18 @@
 		}
 	];
 
+	/** Narasi video tutorial (static/video/tutorial-pemilih.mp4), untuk yang tidak bisa memutar suara. */
+	const narration = [
+		'Begini cara memilih di Pemira PMK ITERA.',
+		'Kamis, 19 November, pukul 09.00 sampai 18.00 WIB, datanglah ke TPS dengan membawa KTM dan HP.',
+		'Di area bilik, buka situs Pemira di HP kamu, lalu masuk dengan akun Google mahasiswa ITERA.',
+		'Petugas lalu mengetik kode TPS sekali pakai di HP kamu. Kamu punya waktu lima menit untuk memilih.',
+		'Baca visi dan misi setiap calon. Coblos satu calon, lalu tekan Lanjut.',
+		'Periksa lagi pilihanmu. Suara yang sudah dikirim tidak bisa diubah.',
+		'Suaramu tercatat. Simpan kode tanda terima, karena kode ini hanya muncul sekali. Setelah itu, kamu keluar otomatis.',
+		'Pilihanmu rahasia. Hasil diumumkan Jumat, 20 November. Sampai jumpa di TPS!'
+	];
+
 	const guarantees = [
 		{
 			title: 'Pilihanmu rahasia',
@@ -228,6 +240,37 @@
 				</li>
 			{/each}
 		</ol>
+
+		<div class="tutorial">
+			<video
+				controls
+				playsinline
+				preload="none"
+				poster="/video/tutorial-pemilih.jpg"
+				width="720"
+				height="1280"
+				aria-describedby="tutorial-desc"
+			>
+				<source src="/video/tutorial-pemilih.mp4" type="video/mp4" />
+				Browser ini tidak bisa memutar video.
+			</video>
+			<div class="tutorial-text">
+				<p class="eyebrow">Video tutorial · 1 menit</p>
+				<h3>Lihat alurnya sebelum ke TPS</h3>
+				<p id="tutorial-desc">
+					Dari datang ke TPS, masuk dengan akun Google, petugas mengetik kode TPS, mencoblos, sampai
+					menyimpan kode tanda terima. Nama, calon, dan kode di video ini fiktif.
+				</p>
+				<details>
+					<summary>Baca narasi video</summary>
+					<ol>
+						{#each narration as line (line)}
+							<li>{line}</li>
+						{/each}
+					</ol>
+				</details>
+			</div>
+		</div>
 	</div>
 </section>
 
@@ -740,6 +783,63 @@
 		color: var(--sand);
 	}
 
+	/* Video tutorial */
+	.tutorial {
+		display: grid;
+		grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+		gap: 24px clamp(32px, 5vw, 64px);
+		align-items: center;
+		margin-top: clamp(48px, 7vw, 80px);
+		padding-top: clamp(40px, 6vw, 64px);
+		border-top: 1px solid rgb(229 210 154 / 0.25);
+	}
+
+	.tutorial video {
+		display: block;
+		width: 100%;
+		height: auto;
+		aspect-ratio: 9 / 16;
+		border-radius: var(--radius);
+		background: var(--paper);
+		box-shadow: 0 24px 50px -24px rgb(0 0 0 / 0.6);
+	}
+
+	.tutorial-text .eyebrow {
+		color: var(--gold);
+	}
+
+	.tutorial-text h3 {
+		margin-top: 12px;
+		font-size: clamp(28px, 3.4vw, 40px);
+		font-weight: 450;
+	}
+
+	.tutorial-text > p:not(.eyebrow) {
+		max-width: 48ch;
+		margin-top: 14px;
+		color: var(--sand);
+	}
+
+	.tutorial details {
+		max-width: 60ch;
+		margin-top: 22px;
+		font-size: 15px;
+		color: var(--sand);
+	}
+
+	.tutorial summary {
+		cursor: pointer;
+		font-weight: 700;
+		color: var(--gold-light);
+	}
+
+	.tutorial details ol {
+		display: grid;
+		gap: 8px;
+		margin: 14px 0 0;
+		padding-left: 1.4em;
+	}
+
 	/* Jaminan */
 	.trust {
 		display: grid;
@@ -834,6 +934,15 @@
 
 		.steps li:not(:last-child)::after {
 			display: none;
+		}
+
+		.tutorial {
+			grid-template-columns: 1fr;
+		}
+
+		.tutorial video {
+			max-width: 320px;
+			margin-inline: auto;
 		}
 	}
 
