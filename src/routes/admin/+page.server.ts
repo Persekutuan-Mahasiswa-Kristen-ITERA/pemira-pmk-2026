@@ -1,7 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { auditStatement, describeDbError, requireAdmin } from '#lib/server/admin.js';
 import { getDb } from '#lib/server/db.js';
-import { getElectionStatus } from '#lib/server/election.js';
+import { getElectionStatus, scheduleError } from '#lib/server/election.js';
 import { getParticipation, isAuditPublic, setAuditPublicStatement } from '#lib/server/results.js';
 import { boothCodeStats, usedExceptionNims } from '#lib/server/tps.js';
 import { unixToWibInput, wibInputToUnix } from '#lib/time.js';
@@ -39,9 +39,17 @@ export const actions: Actions = {
 		if (opensAt === null || closesAt === null) {
 			return fail(400, { error: 'Isi waktu buka dan waktu tutup dengan lengkap.' });
 		}
-		if (closesAt <= opensAt) return fail(400, { error: 'Waktu tutup harus setelah waktu buka.' });
 
 		const db = getDb();
+		const election = await getElectionStatus(db);
+		// Setelah dibuka, trigger yang menolak perubahan jadwal dan memberi pesannya sendiri.
+		if (election.phase === 'unscheduled' || election.phase === 'upcoming') {
+			const error = scheduleError(opensAt, closesAt, election.now);
+			if (error) return fail(400, { error });
+		} else if (closesAt <= opensAt) {
+			return fail(400, { error: 'Waktu tutup harus setelah waktu buka.' });
+		}
+
 		try {
 			await db.batch([
 				db

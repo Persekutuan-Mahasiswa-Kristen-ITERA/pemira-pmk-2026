@@ -244,8 +244,8 @@ versi yang berjalan selalu sama dengan commit yang tampil di footer situs:
 - **Staging**: jalankan workflow _Deploy_ secara manual dari tab Actions (atau `pnpm deploy:staging`).
   Staging memakai database terpisah dan tersedia di `https://staging.pemira-pmk-itera.pages.dev`.
 
-Workflow membutuhkan secret repo `CLOUDFLARE_API_TOKEN` (izin Cloudflare Pages Edit + D1 Edit) dan
-`CLOUDFLARE_ACCOUNT_ID`.
+Workflow membutuhkan `CLOUDFLARE_API_TOKEN` (izin Cloudflare Pages Edit + D1 Edit) dan
+`CLOUDFLARE_ACCOUNT_ID` sebagai secret environment `production` dan `staging`.
 
 ### Teknologi
 

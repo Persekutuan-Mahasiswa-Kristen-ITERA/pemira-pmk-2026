@@ -8,6 +8,30 @@ export interface ElectionConfig {
 
 export interface ElectionStatus extends ElectionConfig {
 	phase: ElectionPhase;
+	now: number; // detik Unix menurut jam D1, sumber waktu yang sama dengan trigger
+}
+
+/** Jarak minimum antara saat jadwal disimpan dan waktu buka. */
+export const MIN_SCHEDULE_LEAD_SECONDS = 5 * 60;
+
+/**
+ * Pemeriksaan awal jadwal sebelum disimpan, supaya pesannya ramah. Waktu buka yang sudah lewat
+ * tidak bisa diperbaiki: trigger `election_config_lock_schedule` langsung mengunci jadwal (dan
+ * DPT/calon) begitu `opens_at` lewat, jadi salah ketik tanggal harus ditolak di sini.
+ */
+export function scheduleError(
+	opensAt: number,
+	closesAt: number,
+	nowSeconds: number
+): string | null {
+	if (closesAt <= opensAt) return 'Waktu tutup harus setelah waktu buka.';
+	if (opensAt <= nowSeconds + MIN_SCHEDULE_LEAD_SECONDS) {
+		return (
+			'Waktu buka harus di masa depan, paling cepat 5 menit dari sekarang. Periksa tanggalnya: ' +
+			'jadwal yang waktu bukanya sudah lewat langsung mengunci pemilihan dan tidak bisa diubah lagi.'
+		);
+	}
+	return null;
 }
 
 /** Sama dengan aturan jendela pemilihan di migrations/0001_init.sql. */
@@ -32,7 +56,7 @@ export async function getElectionStatus(db: D1Database): Promise<ElectionStatus>
 		closesAt: row.closes_at
 	};
 	// Waktu diambil dari database, sumber waktu yang sama dengan trigger.
-	return { ...config, phase: electionPhase(config, row.now) };
+	return { ...config, phase: electionPhase(config, row.now), now: row.now };
 }
 
 /**
