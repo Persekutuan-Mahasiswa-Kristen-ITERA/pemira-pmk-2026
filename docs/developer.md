@@ -7,7 +7,7 @@ Cara menjalankan lokal dan daftar perintah ada di [README](../README.md#menjalan
 
 ## Mulai di sini
 
-1. Minta akses ke repo GitHub kepada pembina (repo masih privat sampai dibuka untuk audit).
+1. Repo ini publik. Untuk bisa push branch dan membuka PR, minta akses tulis ke pembina.
 2. Ikuti [Menjalankan lokal](../README.md#menjalankan-lokal). Isi `SUPER_ADMIN_EMAILS` di `.dev.vars`
    dengan email Google-mu supaya bisa membuka `/admin` di lokal.
 3. Baca [Aturan yang tidak boleh dilanggar](#aturan-yang-tidak-boleh-dilanggar) dan
@@ -59,29 +59,30 @@ Browser ──► Cloudflare Pages (SvelteKit, server-side) ──► Cloudflare
 
 ## Peta kode
 
-| Lokasi                         | Isi                                                                                                                                                 |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `migrations/`                  | Skema dan **aturan pemilihan** (trigger): 0001 dasar, 0002 DPT berbasis NIM, 0003 admin dan foto, 0004 TPS, 0005 audit publik, 0006 uji coba publik |
-| `src/lib/server/vote.ts`       | Status pemilih dan pencatatan suara (`castVote`)                                                                                                    |
-| `src/lib/server/tps.ts`        | Kode TPS, kode pengecualian, izin memilih, penghitung rekonsiliasi                                                                                  |
-| `src/lib/server/auth.ts`       | Verifikasi Firebase ID token                                                                                                                        |
-| `src/lib/server/access.ts`     | Aturan domain email, NIM dari email, dan admin                                                                                                      |
-| `src/lib/server/admin.ts`      | `requireAdmin`, `requireSuperAdmin`, pencatatan audit log                                                                                           |
-| `src/lib/server/admins.ts`     | Peran admin (super admin dari secret, admin undangan dari tabel)                                                                                    |
-| `src/lib/server/photos.ts`     | Validasi foto calon                                                                                                                                 |
-| `src/lib/server/candidates.ts` | URL foto per calon                                                                                                                                  |
-| `src/lib/resize-image.ts`      | Memperkecil foto di browser sebelum diunggah                                                                                                        |
-| `src/lib/components/`          | Komponen tampilan bersama (lihat [Tampilan](#tampilan))                                                                                             |
-| `src/routes/+layout.*`         | Header, footer, pita "uji coba", dan label database                                                                                                 |
-| `src/routes/foto-calon/`       | Foto calon (publik, cache panjang lewat URL berversi)                                                                                               |
-| `src/lib/server/results.ts`    | Rekap, daftar surat suara, CSV + SHA-256                                                                                                            |
-| `src/lib/server/dpt.ts`        | Parser CSV DPT dan sidik jari DPT                                                                                                                   |
-| `src/lib/server/testing/`      | SQLite di memori (`node:sqlite`) dengan shim D1 untuk tes                                                                                           |
-| `src/routes/pilih/`            | Kode TPS, surat suara (5 menit), kode tanda terima sekali tampil, keluar otomatis 20 detik                                                          |
-| `src/routes/petugas/`          | Halaman Petugas TPS: buat kode TPS, cek DPT, penghitung kode                                                                                        |
-| `src/routes/hasil/`            | Hasil; pencarian kode dan unduhan CSV hanya bila ditutup DAN admin membuka audit suara (`audit_public`), selain itu 404                             |
-| `src/routes/admin/`            | Ringkasan & jadwal + rekonsiliasi TPS, tutup darurat, calon + foto, DPT, kode pengecualian, audit log, panitia (super admin)                        |
-| `.github/workflows/`           | CI (lint, check, test, build) dan deploy                                                                                                            |
+| Lokasi                         | Isi                                                                                                                                                                                     |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `migrations/`                  | Skema dan **aturan pemilihan** (trigger): 0001 dasar, 0002 DPT berbasis NIM, 0003 admin dan foto, 0004 TPS, 0005 audit publik, 0006 uji coba publik, 0007 kode pengecualian super admin |
+| `src/lib/server/vote.ts`       | Status pemilih dan pencatatan suara (`castVote`)                                                                                                                                        |
+| `src/lib/server/tps.ts`        | Kode TPS, kode pengecualian, izin memilih, penghitung rekonsiliasi                                                                                                                      |
+| `src/lib/server/auth.ts`       | Verifikasi Firebase ID token                                                                                                                                                            |
+| `src/lib/server/access.ts`     | Aturan domain email, NIM dari email, dan admin                                                                                                                                          |
+| `src/lib/server/admin.ts`      | `requireAdmin`, `requireSuperAdmin`, pencatatan audit log                                                                                                                               |
+| `src/lib/server/admins.ts`     | Peran admin (super admin dari secret, admin undangan dari tabel)                                                                                                                        |
+| `src/lib/server/photos.ts`     | Validasi foto calon                                                                                                                                                                     |
+| `src/lib/server/candidates.ts` | URL foto per calon                                                                                                                                                                      |
+| `src/lib/resize-image.ts`      | Memperkecil foto di browser sebelum diunggah                                                                                                                                            |
+| `src/lib/components/`          | Komponen tampilan bersama (lihat [Tampilan](#tampilan))                                                                                                                                 |
+| `src/routes/+layout.*`         | Header, footer, pita "uji coba", dan label database                                                                                                                                     |
+| `src/routes/foto-calon/`       | Foto calon (publik, cache panjang lewat URL berversi)                                                                                                                                   |
+| `src/lib/server/results.ts`    | Rekap, daftar surat suara, CSV + SHA-256                                                                                                                                                |
+| `src/lib/server/dpt.ts`        | Parser CSV DPT dan sidik jari DPT                                                                                                                                                       |
+| `src/lib/server/testing/`      | SQLite di memori (`node:sqlite`) dengan shim D1 untuk tes                                                                                                                               |
+| `src/routes/pilih/`            | Kode TPS, surat suara (5 menit), kode tanda terima sekali tampil, keluar otomatis 20 detik                                                                                              |
+| `src/routes/petugas/`          | Halaman Petugas TPS: buat kode TPS, cek DPT, penghitung kode                                                                                                                            |
+| `src/routes/hasil/`            | Hasil; pencarian kode dan unduhan CSV hanya bila ditutup DAN admin membuka audit suara (`audit_public`), selain itu 404                                                                 |
+| `src/routes/admin/`            | Ringkasan & jadwal + rekonsiliasi TPS, tutup darurat, calon + foto, DPT, kode pengecualian, audit log, panitia (super admin)                                                            |
+| `scripts/reset-uji-coba.*`     | Reset uji coba publik di production (SQL + runner dengan bookmark Time Travel, arsip audit log, verifikasi)                                                                             |
+| `.github/workflows/`           | CI (lint, check, test, build) dan deploy                                                                                                                                                |
 
 ## Aturan yang tidak boleh dilanggar
 
@@ -115,7 +116,7 @@ Tampilan memakai motif **surat suara kertas**. Pertahankan arah ini saat menamba
 - **Huruf:** Newsreader untuk judul (miring untuk penekanan, mis. `<em>`), Nunito Sans untuk teks, IBM Plex
   Mono untuk kode tanda terima, hash, dan angka.
 - **Komponen bersama** di `src/lib/components/`: `BallotHead` (kepala surat suara), `Guilloche` (pola cetak
-  pengaman), `PhaseStamp` (stempel tahap), `Countdown`, `PunchHole` (bekas coblosan), `Seal` (logo).
+  pengaman), `PhaseStamp` (stempel tahap), `Countdown`, `PunchHole` (bekas coblosan). Logo PMK ITERA: `src/lib/assets/logo-pmk.png` (juga favicon).
 - **Kelas global** di `src/app.css`: `.button` (+ `-gold`, `-ghost`, `-danger`), `.sheet` (lembar kertas),
   `.eyebrow`, `.msg-error`/`.msg-ok`, `.rise` (animasi masuk), `.visually-hidden`.
 - **Netral terhadap calon.** Jangan pernah menonjolkan atau menandai calon tertentu sebelum hasil diumumkan
@@ -124,7 +125,7 @@ Tampilan memakai motif **surat suara kertas**. Pertahankan arah ini saat menamba
 
 ## Mengubah skema
 
-- Buat migrasi baru (`migrations/0005_....sql`). **Jangan mengedit** migrasi yang sudah
+- Buat migrasi baru (`migrations/000N_....sql`). **Jangan mengedit** migrasi yang sudah
   diterapkan ke staging/production; D1 tidak akan menjalankannya ulang.
 - Setiap aturan baru diberi tes di `src/lib/server/db/schema.spec.ts`. Tes memakai SQLite asli, jadi
   trigger ikut teruji.
@@ -148,7 +149,9 @@ Tampilan memakai motif **surat suara kertas**. Pertahankan arah ini saat menamba
   `env.preview` di `wrangler.jsonc` (database staging).
 - Variabel `APP_ENV` (`production`/`staging`, di `wrangler.jsonc` pada blok yang sama dengan database-nya)
   ditampilkan di situs: staging dan lokal diberi pita "uji coba" di atas header, dan footer selalu
-  menyebut database yang dipakai.
+  menyebut database yang dipakai. Production diberi pita "Uji coba publik" selama
+  `election_config.public_test = 1` (migrasi 0006); flag ini hanya dimatikan oleh
+  `scripts/reset-uji-coba.sql`.
 - GitHub Actions memakai secret repo `CLOUDFLARE_API_TOKEN` (Pages Edit + D1 Edit) dan
   `CLOUDFLARE_ACCOUNT_ID`.
 - Deploy manual (darurat, dari komputer yang sudah `wrangler login`, kode bersih tanpa perubahan):
@@ -196,6 +199,10 @@ Tampilan memakai motif **surat suara kertas**. Pertahankan arah ini saat menamba
 - Setelah suara masuk, `/pilih` memakai `applyAction` (bukan `update()`): izin, dan untuk jalur pengecualian
   juga sesinya, sudah habis, sehingga memuat ulang halaman akan mengalihkan ke `/masuk` dan tanda terima
   hilang.
+- `scripts/reset-uji-coba.sql` melepas lalu membuat ulang beberapa trigger (hapus `ballots`/`voted`/
+  `audit_log`/`booth_codes`/`exception_codes` dan `election_config_lock_schedule`) dengan teks yang sama
+  persis dengan migrasi terakhir. Jika migrasi baru mengubah trigger itu, perbarui skrip reset juga;
+  `src/lib/server/db/reset-uji-coba.spec.ts` akan gagal bila skemanya berbeda.
 - Content-Security-Policy belum dipasang karena popup Firebase memuat script dari `apis.google.com`;
   pasang setelah alur login teruji.
 
