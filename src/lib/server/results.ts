@@ -1,3 +1,4 @@
+import type { ElectionPhase } from './election';
 import { sha256Hex } from './hash';
 
 export interface Participation {
@@ -63,7 +64,8 @@ export async function publishedBallots(db: D1Database) {
 
 /**
  * Apakah bagian audit (pencarian kode tanda terima dan CSV surat suara) dibuka ke publik.
- * Diaktifkan admin dari panel Admin; hanya berpengaruh setelah pemungutan suara ditutup.
+ * Diaktifkan admin dari panel Admin; hanya berpengaruh bila hasil sudah boleh tampil
+ * (`resultsVisible`).
  */
 export async function isAuditPublic(db: D1Database): Promise<boolean> {
 	const row = await db
@@ -77,4 +79,68 @@ export function setAuditPublicStatement(db: D1Database, enabled: boolean): D1Pre
 	return db
 		.prepare('UPDATE election_config SET audit_public = ? WHERE id = 1')
 		.bind(enabled ? 1 : 0);
+}
+
+export type ResultsMode = 'auto' | 'manual';
+
+export interface ResultsApproval {
+	email: string;
+	approvedAt: number;
+	solo: boolean;
+}
+
+export interface ResultsRelease {
+	mode: ResultsMode;
+	approvals: ResultsApproval[];
+	/** Sudah dipublikasikan lewat tombol (dua admin berbeda, atau satu super admin). */
+	published: boolean;
+}
+
+/** Aturan publikasi (migrations/0008_publikasi_hasil.sql): dua admin berbeda, atau satu baris solo. */
+export function isPublished(approvals: ResultsApproval[]): boolean {
+	return approvals.length >= 2 || approvals.some((a) => a.solo);
+}
+
+/**
+ * Apakah perolehan suara (dan bagian audit) boleh dikirim ke siapa pun. Sebelum ditutup: tidak
+ * pernah. Setelah ditutup: langsung pada mode otomatis, atau setelah dipublikasikan pada mode
+ * tombol. Berlaku sama untuk publik dan admin.
+ */
+export function resultsVisible(phase: ElectionPhase, release: ResultsRelease): boolean {
+	return phase === 'closed' && (release.mode === 'auto' || release.published);
+}
+
+export async function getResultsRelease(db: D1Database): Promise<ResultsRelease> {
+	const [config, { results }] = await Promise.all([
+		db
+			.prepare('SELECT results_mode FROM election_config WHERE id = 1')
+			.first<{ results_mode: ResultsMode }>(),
+		db
+			.prepare(
+				'SELECT admin_email, approved_at, solo FROM results_approvals ORDER BY approved_at, admin_email'
+			)
+			.all<{ admin_email: string; approved_at: number; solo: number }>()
+	]);
+	const approvals = results.map((r) => ({
+		email: r.admin_email,
+		approvedAt: r.approved_at,
+		solo: r.solo === 1
+	}));
+	return { mode: config?.results_mode ?? 'auto', approvals, published: isPublished(approvals) };
+}
+
+/** Pernyataan untuk mengubah mode publikasi; dijalankan dalam satu batch dengan audit log. */
+export function setResultsModeStatement(db: D1Database, mode: ResultsMode): D1PreparedStatement {
+	return db.prepare('UPDATE election_config SET results_mode = ? WHERE id = 1').bind(mode);
+}
+
+/** Pernyataan persetujuan publikasi; dijalankan dalam satu batch dengan audit log. */
+export function approveResultsStatement(
+	db: D1Database,
+	email: string,
+	solo: boolean
+): D1PreparedStatement {
+	return db
+		.prepare('INSERT INTO results_approvals (admin_email, solo) VALUES (?, ?)')
+		.bind(email, solo ? 1 : 0);
 }

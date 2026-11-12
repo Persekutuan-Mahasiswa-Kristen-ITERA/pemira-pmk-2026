@@ -1,8 +1,21 @@
 import { fail } from '@sveltejs/kit';
-import { auditStatement, describeDbError, requireAdmin } from '#lib/server/admin.js';
+import {
+	auditStatement,
+	describeDbError,
+	requireAdmin,
+	requireSuperAdmin
+} from '#lib/server/admin.js';
 import { getDb } from '#lib/server/db.js';
 import { getElectionStatus, scheduleError } from '#lib/server/election.js';
-import { getParticipation, isAuditPublic, setAuditPublicStatement } from '#lib/server/results.js';
+import {
+	approveResultsStatement,
+	getParticipation,
+	getResultsRelease,
+	isAuditPublic,
+	isPublished,
+	setAuditPublicStatement,
+	setResultsModeStatement
+} from '#lib/server/results.js';
 import { boothCodeStats, usedExceptionNims } from '#lib/server/tps.js';
 import { unixToWibInput, wibInputToUnix } from '#lib/time.js';
 import type { Actions, PageServerLoad } from './$types';
@@ -10,17 +23,20 @@ import type { Actions, PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ locals }) => {
 	requireAdmin(locals);
 	const db = getDb();
-	const [election, participation, boothCodes, exceptionNims, auditPublic] = await Promise.all([
-		getElectionStatus(db),
-		getParticipation(db),
-		boothCodeStats(db),
-		usedExceptionNims(db),
-		isAuditPublic(db)
-	]);
+	const [election, participation, boothCodes, exceptionNims, auditPublic, release] =
+		await Promise.all([
+			getElectionStatus(db),
+			getParticipation(db),
+			boothCodeStats(db),
+			usedExceptionNims(db),
+			isAuditPublic(db),
+			getResultsRelease(db)
+		]);
 	return {
 		election,
 		participation,
 		auditPublic,
+		release,
 		tps: { boothCodes, exceptionsUsed: exceptionNims.length },
 		opensInput: unixToWibInput(election.opensAt),
 		closesInput: unixToWibInput(election.closesAt)
@@ -94,8 +110,77 @@ export const actions: Actions = {
 	},
 
 	/**
+	 * Mode publikasi hasil (migrations/0008_publikasi_hasil.sql): otomatis saat ditutup, atau
+	 * menunggu tombol Publikasikan. Hanya super admin, dan boleh diubah kapan saja (keputusan
+	 * pemilik proyek). Hasil yang sudah dipublikasikan lewat tombol tetap tampil.
+	 */
+	resultsMode: async ({ locals, request }) => {
+		const admin = requireSuperAdmin(locals);
+		const form = await request.formData();
+		const mode = form.get('mode');
+		if (mode !== 'auto' && mode !== 'manual') return fail(400, { error: 'Mode tidak dikenal.' });
+
+		const db = getDb();
+		try {
+			await db.batch([
+				setResultsModeStatement(db, mode),
+				auditStatement(db, admin, 'results.mode', { mode })
+			]);
+		} catch (err) {
+			return fail(409, { error: describeDbError(err) ?? 'Gagal mengubah mode publikasi hasil.' });
+		}
+		return {
+			ok:
+				mode === 'auto'
+					? 'Hasil akan tampil otomatis begitu pemungutan suara ditutup.'
+					: 'Hasil baru tampil setelah dipublikasikan dua admin (atau super admin).'
+		};
+	},
+
+	/**
+	 * Setujui publikasi hasil. Admin biasa: hasil tampil setelah dua admin berbeda menyetujui.
+	 * Super admin: langsung tampil (`solo`). Persetujuan permanen dan tercatat di audit log.
+	 */
+	publish: async ({ locals }) => {
+		const admin = requireAdmin(locals);
+		const solo = locals.role === 'super';
+
+		const db = getDb();
+		const [election, release] = await Promise.all([getElectionStatus(db), getResultsRelease(db)]);
+		if (election.phase !== 'closed') {
+			return fail(409, {
+				error: 'Hasil hanya bisa dipublikasikan setelah pemungutan suara ditutup.'
+			});
+		}
+		if (release.mode !== 'manual' || release.published) {
+			return fail(409, { error: 'Hasil sudah tampil di halaman Hasil.' });
+		}
+		if (release.approvals.some((a) => a.email === admin.email)) {
+			return fail(409, { error: 'Anda sudah menyetujui. Menunggu persetujuan admin lain.' });
+		}
+
+		try {
+			await db.batch([
+				approveResultsStatement(db, admin.email, solo),
+				auditStatement(db, admin, 'results.approve', { solo })
+			]);
+		} catch (err) {
+			return fail(409, { error: describeDbError(err) ?? 'Gagal menyimpan persetujuan.' });
+		}
+		const approvals = [
+			...release.approvals,
+			{ email: admin.email, approvedAt: election.now, solo }
+		];
+		return {
+			ok: isPublished(approvals)
+				? 'Hasil dipublikasikan dan sekarang tampil di halaman Hasil.'
+				: 'Persetujuan tersimpan. Hasil tampil setelah satu admin lain ikut menyetujui.'
+		};
+	},
+
+	/**
 	 * Buka/tutup audit suara publik: pencarian kode tanda terima dan unduhan CSV surat suara di
-	 * halaman Hasil. Perolehan suara tetap tampil setelah ditutup, terlepas dari flag ini.
+	 * halaman Hasil. Hanya berpengaruh bila perolehan suara sudah boleh tampil (`resultsVisible`).
 	 */
 	audit: async ({ locals, request }) => {
 		const admin = requireAdmin(locals);

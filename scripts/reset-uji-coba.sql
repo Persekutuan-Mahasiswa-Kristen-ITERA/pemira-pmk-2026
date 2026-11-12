@@ -2,9 +2,11 @@
 -- Jalankan lewat `pnpm db:reset:uji-coba <local|staging|production>` (scripts/reset-uji-coba.mjs),
 -- yang mencatat bookmark Time Travel, mengarsipkan audit log, lalu memverifikasi hasilnya.
 --
--- DIHAPUS : surat suara, tanda sudah memilih, izin memilih, kode TPS, kode pengecualian, audit log;
---           jadwal dikosongkan (sehingga calon dan DPT bisa diubah lagi), audit publik ditutup.
--- DIPERTAHANKAN: calon (profil, visi-misi, foto), DPT, admin, Petugas TPS, judul pemilihan.
+-- DIHAPUS : surat suara, tanda sudah memilih, izin memilih, kode TPS, kode pengecualian,
+--           persetujuan publikasi hasil, audit log; jadwal dikosongkan (sehingga calon dan DPT bisa
+--           diubah lagi), audit publik ditutup.
+-- DIPERTAHANKAN: calon (profil, visi-misi, foto), DPT, admin, Petugas TPS, judul pemilihan, mode
+--           publikasi hasil (otomatis/tombol).
 --
 -- Beberapa tabel dijaga trigger "tidak boleh dihapus". Trigger itu dilepas sebentar lalu dibuat
 -- ulang dengan teks yang SAMA PERSIS dengan migrasi terakhir (diuji di reset-uji-coba.spec.ts).
@@ -35,6 +37,15 @@ CREATE TRIGGER booth_codes_no_delete
 BEFORE DELETE ON booth_codes
 BEGIN
 	SELECT RAISE(ABORT, 'booth_codes_immutable');
+END;
+
+-- Persetujuan publikasi hasil (migrations/0008_publikasi_hasil.sql)
+DROP TRIGGER results_approvals_no_delete;
+DELETE FROM results_approvals;
+CREATE TRIGGER results_approvals_no_delete
+BEFORE DELETE ON results_approvals
+BEGIN
+	SELECT RAISE(ABORT, 'results_approvals_immutable');
 END;
 
 -- Surat suara

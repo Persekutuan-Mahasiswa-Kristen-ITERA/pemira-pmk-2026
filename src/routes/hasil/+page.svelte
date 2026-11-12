@@ -62,12 +62,21 @@
 			</div>
 			<div class="sealed-body">
 				<h2>Kotak suara masih <em>tersegel.</em></h2>
-				<p>
-					Hasil dan daftar surat suara akan dibuka di halaman ini setelah pemungutan suara ditutup{data
-						.election.closesAt
-						? ` (${formatWib(data.election.closesAt)})`
-						: ''}.
-				</p>
+				{#if data.awaitingPublish}
+					<p>
+						Pemungutan suara sudah ditutup{data.election.closesAt
+							? ` (${formatWib(data.election.closesAt)})`
+							: ''}. Hasil akan dibuka di halaman ini setelah dipublikasikan panitia. Sampai saat
+						itu perolehan suara tidak ditampilkan kepada siapa pun, termasuk panitia.
+					</p>
+				{:else}
+					<p>
+						Hasil dan daftar surat suara akan dibuka di halaman ini setelah pemungutan suara ditutup{data
+							.election.closesAt
+							? ` (${formatWib(data.election.closesAt)})`
+							: ''}.
+					</p>
+				{/if}
 				{#if data.election.phase === 'open' && data.election.closesAt !== null}
 					<div class="sealed-countdown">
 						<Countdown target={data.election.closesAt} label="Sisa waktu pemungutan suara" />

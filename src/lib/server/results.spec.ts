@@ -3,12 +3,18 @@ import type { DatabaseSync } from 'node:sqlite';
 import { asD1, freshDb, grantPass } from './testing/sqlite';
 import { castVote } from './vote';
 import {
+	approveResultsStatement,
 	ballotsCsv,
 	getParticipation,
+	getResultsRelease,
 	getTally,
 	isAuditPublic,
+	isPublished,
 	publishedBallots,
-	setAuditPublicStatement
+	resultsVisible,
+	setAuditPublicStatement,
+	setResultsModeStatement,
+	type ResultsRelease
 } from './results';
 
 let raw: DatabaseSync;
@@ -74,5 +80,59 @@ describe('audit suara publik', () => {
 		await setAuditPublicStatement(db, true).run();
 		expect(raw.prepare('SELECT opens_at, closes_at FROM election_config').get()).toEqual(before);
 		expect(await getParticipation(db)).toEqual({ eligible: 4, voted: 3, ballots: 3 });
+	});
+});
+
+describe('publikasi hasil', () => {
+	const a = (email: string, solo = false) => ({ email, approvedAt: 0, solo });
+	const release = (mode: 'auto' | 'manual', published = false): ResultsRelease => ({
+		mode,
+		approvals: [],
+		published
+	});
+
+	it('dipublikasikan oleh dua admin berbeda atau satu super admin', () => {
+		expect(isPublished([])).toBe(false);
+		expect(isPublished([a('x@x.id')])).toBe(false);
+		expect(isPublished([a('x@x.id'), a('y@x.id')])).toBe(true);
+		expect(isPublished([a('super@x.id', true)])).toBe(true);
+	});
+
+	it('hasil tidak pernah tampil sebelum ditutup, apa pun modenya', () => {
+		for (const phase of ['unscheduled', 'upcoming', 'open'] as const) {
+			expect(resultsVisible(phase, release('auto'))).toBe(false);
+			expect(resultsVisible(phase, release('manual', true))).toBe(false);
+		}
+	});
+
+	it('setelah ditutup: otomatis langsung tampil, mode tombol menunggu publikasi', () => {
+		expect(resultsVisible('closed', release('auto'))).toBe(true);
+		expect(resultsVisible('closed', release('manual'))).toBe(false);
+		expect(resultsVisible('closed', release('manual', true))).toBe(true);
+	});
+
+	it('membaca mode dan persetujuan dari database', async () => {
+		expect(await getResultsRelease(db)).toEqual({ mode: 'auto', approvals: [], published: false });
+
+		await setResultsModeStatement(db, 'manual').run();
+		raw.exec('UPDATE election_config SET closes_at = unixepoch()'); // tutup darurat
+		await approveResultsStatement(db, 'admin1@x.id', false).run();
+		let r = await getResultsRelease(db);
+		expect(r.mode).toBe('manual');
+		expect(r.approvals.map((x) => [x.email, x.solo])).toEqual([['admin1@x.id', false]]);
+		expect(r.published).toBe(false);
+		expect(resultsVisible('closed', r)).toBe(false);
+
+		await approveResultsStatement(db, 'admin2@x.id', false).run();
+		r = await getResultsRelease(db);
+		expect(r.published).toBe(true);
+		expect(resultsVisible('closed', r)).toBe(true);
+	});
+
+	it('super admin mempublikasikan sendiri', async () => {
+		await setResultsModeStatement(db, 'manual').run();
+		raw.exec('UPDATE election_config SET closes_at = unixepoch()'); // tutup darurat
+		await approveResultsStatement(db, 'super@x.id', true).run();
+		expect((await getResultsRelease(db)).published).toBe(true);
 	});
 });

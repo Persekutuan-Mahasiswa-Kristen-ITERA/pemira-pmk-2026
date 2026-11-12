@@ -56,6 +56,8 @@ export function describeDbError(err: unknown): string | null {
 		candidates_locked: 'Daftar calon terkunci karena pemilihan sudah dibuka.',
 		voters_locked: 'DPT terkunci karena pemilihan sudah dibuka.',
 		voting_closed: 'Pemungutan suara sedang tidak dibuka.',
+		voting_not_closed: 'Hasil hanya bisa dipublikasikan setelah pemungutan suara ditutup.',
+		results_approvals_immutable: 'Anda sudah menyetujui publikasi hasil.',
 		'UNIQUE constraint failed: candidates.number': 'Nomor urut itu sudah dipakai calon lain.',
 		'FOREIGN KEY': 'Data ini masih dipakai oleh data lain sehingga tidak bisa dihapus.',
 		'CHECK constraint failed': 'Data tidak valid (misalnya waktu tutup harus setelah waktu buka).'

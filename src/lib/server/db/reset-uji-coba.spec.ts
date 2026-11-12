@@ -119,6 +119,21 @@ describe('reset uji coba publik', () => {
 		});
 	});
 
+	it('menghapus persetujuan publikasi hasil uji, mode publikasi tetap', () => {
+		db.prepare("UPDATE election_config SET closes_at = unixepoch(), results_mode = 'manual'").run();
+		db.prepare("INSERT INTO results_approvals (admin_email) VALUES ('admin@x.id')").run();
+		db.exec(RESET_SQL);
+		expect(count(db, 'results_approvals')).toBe(0);
+		expect(db.prepare('SELECT results_mode FROM election_config').get()).toEqual({
+			results_mode: 'manual'
+		});
+		// Setelah reset, persetujuan tetap ditolak sampai pemilihan resmi ditutup.
+		expect(() =>
+			db.prepare("INSERT INTO results_approvals (admin_email) VALUES ('admin@x.id')").run()
+		).toThrow(/voting_not_closed/);
+		expect(() => db.prepare('DELETE FROM results_approvals').run()).not.toThrow(); // tabel kosong
+	});
+
 	it('menyisakan hanya satu entri audit log: penanda reset', () => {
 		db.exec(RESET_SQL);
 		expect(db.prepare('SELECT actor_email, action FROM audit_log').all()).toEqual([
