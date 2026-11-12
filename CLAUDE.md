@@ -59,8 +59,10 @@ dokumen untuk membenarkan kode, atau sebaliknya, tanpa persetujuan.
    `NOTES.local.md` di-ignore. Tes dan fixture hanya memakai data fiktif.
 
 Batasan yang diterima secara sadar (didokumentasikan di README): tidak ada rate limit, Turnstile, maupun
-Content-Security-Policy; kode pengecualian bergantung pada kejujuran admin; pemegang akses langsung D1 bisa
-melihat siapa yang sudah memilih (bukan pilihannya) dan secara teknis bisa melepas trigger.
+Content-Security-Policy; kode pengecualian bergantung pada kejujuran admin; admin bisa mengecek per NIM
+apakah sudah memilih (lewat pengajuan kode pengecualian); pemegang akses langsung D1 (hanya Martin Manullang)
+bisa melihat siapa yang sudah memilih, bisa mencocokkan NIM dengan pilihan bila memantau database selama
+pemilihan, dan secara teknis bisa melepas trigger.
 
 ## Status saat ini (per 12 November 2026)
 
