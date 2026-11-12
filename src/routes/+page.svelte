@@ -13,7 +13,7 @@
 	let { data }: PageProps = $props();
 	let election = $derived(data.election);
 	let p = $derived(data.participation);
-	let turnout = $derived(p.eligible ? Math.round((p.voted / p.eligible) * 1000) / 10 : 0);
+	let turnout = $derived(p && p.eligible ? Math.round((p.voted / p.eligible) * 1000) / 10 : 0);
 
 	const steps = [
 		{
@@ -95,7 +95,7 @@
 					</p>
 				{/if}
 
-				{#if election.phase === 'open' || election.phase === 'closed'}
+				{#if p && (election.phase === 'open' || election.phase === 'closed')}
 					<div class="turnout">
 						<div class="turnout-head">
 							<span>Partisipasi</span>

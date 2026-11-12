@@ -58,7 +58,10 @@ dokumen untuk membenarkan kode, atau sebaliknya, tanpa persetujuan.
    berbeda** atau **super admin sendiri** (`results_approvals`, permanen). Super admin boleh mengubah mode
    kapan saja. Semua jalur hasil memakai `resultsVisible` (`results.ts`). Pencarian kode dan CSV surat
    suara + SHA-256 baru tampil bila hasil sudah tampil DAN seorang admin membuka audit suara
-   (`audit_public`). Semua perubahan tercatat di audit log.
+   (`audit_public`). `election_config.results_detail` (migrasi 0009, super admin, kapan saja):
+   `percent` = publik hanya menerima persentase per calon; jumlah DPT, sudah memilih, partisipasi, jumlah
+   suara, dan CSV tidak dikirim ke non-admin (`showsCounts`). Pencarian kode lewat action `periksa`, satu
+   kode per permintaan; daftar kode tidak pernah dikirim ke browser. Semua perubahan tercatat di audit log.
 8. **Data pribadi dan secret** tidak boleh masuk repo: DPT, `data/`, `*.csv`, `*.xlsx`, `.dev.vars`,
    `NOTES.local.md` di-ignore. Tes dan fixture hanya memakai data fiktif.
 

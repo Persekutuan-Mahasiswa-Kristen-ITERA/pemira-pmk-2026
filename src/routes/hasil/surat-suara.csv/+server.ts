@@ -5,15 +5,17 @@ import {
 	getResultsRelease,
 	isAuditPublic,
 	publishedBallots,
-	resultsVisible
+	resultsVisible,
+	showsCounts
 } from '#lib/server/results.js';
 import type { RequestHandler } from './$types';
 
 /**
  * Daftar semua surat suara (kode → nomor calon): hanya setelah pemungutan suara ditutup, hasil
  * boleh tampil (otomatis atau sudah dipublikasikan), DAN admin membuka audit suara ke publik.
+ * Pada rincian "persentase saja" CSV hanya untuk admin, karena CSV memuat jumlah suara.
  */
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async ({ locals }) => {
 	const db = getDb();
 	const [election, auditPublic, release] = await Promise.all([
 		getElectionStatus(db),
@@ -25,6 +27,9 @@ export const GET: RequestHandler = async () => {
 	}
 	if (!resultsVisible(election.phase, release)) error(404, 'Hasil belum dipublikasikan.');
 	if (!auditPublic) error(404, 'Audit suara belum dibuka oleh panitia.');
+	if (!showsCounts(release.detail, locals.role !== null)) {
+		error(404, 'Panitia hanya mempublikasikan persentase suara.');
+	}
 	const { csv, sha256 } = await publishedBallots(db);
 	return new Response(csv, {
 		headers: {

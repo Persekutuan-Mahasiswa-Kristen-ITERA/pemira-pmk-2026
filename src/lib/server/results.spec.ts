@@ -5,6 +5,7 @@ import { castVote } from './vote';
 import {
 	approveResultsStatement,
 	ballotsCsv,
+	findBallot,
 	getParticipation,
 	getResultsRelease,
 	getTally,
@@ -13,7 +14,10 @@ import {
 	publishedBallots,
 	resultsVisible,
 	setAuditPublicStatement,
+	setResultsDetailStatement,
 	setResultsModeStatement,
+	showsCounts,
+	shownTally,
 	type ResultsRelease
 } from './results';
 
@@ -87,6 +91,7 @@ describe('publikasi hasil', () => {
 	const a = (email: string, solo = false) => ({ email, approvedAt: 0, solo });
 	const release = (mode: 'auto' | 'manual', published = false): ResultsRelease => ({
 		mode,
+		detail: 'counts',
 		approvals: [],
 		published
 	});
@@ -112,7 +117,12 @@ describe('publikasi hasil', () => {
 	});
 
 	it('membaca mode dan persetujuan dari database', async () => {
-		expect(await getResultsRelease(db)).toEqual({ mode: 'auto', approvals: [], published: false });
+		expect(await getResultsRelease(db)).toEqual({
+			mode: 'auto',
+			detail: 'counts',
+			approvals: [],
+			published: false
+		});
 
 		await setResultsModeStatement(db, 'manual').run();
 		raw.exec('UPDATE election_config SET closes_at = unixepoch()'); // tutup darurat
@@ -134,5 +144,74 @@ describe('publikasi hasil', () => {
 		raw.exec('UPDATE election_config SET closes_at = unixepoch()'); // tutup darurat
 		await approveResultsStatement(db, 'super@x.id', true).run();
 		expect((await getResultsRelease(db)).published).toBe(true);
+	});
+});
+
+describe('rincian hasil (persentase saja)', () => {
+	const row = (number: number, votes: number) => ({ number, name: `C${number}`, votes });
+
+	it('bawaan jumlah suara; bisa diubah ke persentase saja dan kembali', async () => {
+		expect((await getResultsRelease(db)).detail).toBe('counts');
+		await setResultsDetailStatement(db, 'percent').run();
+		raw.exec('UPDATE election_config SET closes_at = unixepoch()'); // tutup darurat
+		expect((await getResultsRelease(db)).detail).toBe('percent');
+		await setResultsDetailStatement(db, 'counts').run();
+		expect((await getResultsRelease(db)).detail).toBe('counts');
+	});
+
+	it('publik hanya melihat angka pada mode jumlah suara; admin selalu', () => {
+		expect(showsCounts('counts', false)).toBe(true);
+		expect(showsCounts('percent', false)).toBe(false);
+		expect(showsCounts('percent', true)).toBe(true);
+	});
+
+	it('persentase saja tidak memuat jumlah suara', async () => {
+		const shown = shownTally(await getTally(db), false);
+		expect(shown).toEqual([
+			{ number: 1, name: 'Satu', percent: 33.3, votes: null, top: false },
+			{ number: 2, name: 'Dua', percent: 66.7, votes: null, top: true },
+			{ number: 3, name: 'Tiga', percent: 0, votes: null, top: false }
+		]);
+		expect(JSON.stringify(shown)).not.toMatch(/"votes":\d/);
+	});
+
+	it('dengan jumlah suara tetap memuat angka', async () => {
+		expect(shownTally(await getTally(db), true).map((r) => r.votes)).toEqual([1, 2, 0]);
+	});
+
+	it('persentase dibulatkan 0,1% dan jumlahnya tepat 100', () => {
+		const sum = (rows: { percent: number }[]) =>
+			Math.round(rows.reduce((s, r) => s + r.percent, 0) * 10) / 10;
+		const thirds = shownTally([row(1, 1), row(2, 1), row(3, 1)], false);
+		expect(thirds.map((r) => r.percent)).toEqual([33.4, 33.3, 33.3]);
+		expect(sum(thirds)).toBe(100);
+		expect(thirds.every((r) => r.top)).toBe(true); // seri
+		for (const votes of [
+			[1234, 987],
+			[7, 0, 3],
+			[2001, 1999, 500]
+		]) {
+			expect(
+				sum(
+					shownTally(
+						votes.map((v, i) => row(i + 1, v)),
+						false
+					)
+				)
+			).toBe(100);
+		}
+	});
+
+	it('tanpa suara: semua 0% dan tidak ada yang terbanyak', () => {
+		expect(shownTally([row(1, 0), row(2, 0)], false)).toEqual([
+			{ number: 1, name: 'C1', percent: 0, votes: null, top: false },
+			{ number: 2, name: 'C2', percent: 0, votes: null, top: false }
+		]);
+	});
+
+	it('mencari satu kode tanda terima', async () => {
+		expect(await findBallot(db, 'BBBBB-BBBBB')).toBe(2);
+		expect(await findBallot(db, 'AAAAA-AAAAA')).toBe(1);
+		expect(await findBallot(db, 'ZZZZZ-ZZZZZ')).toBeNull();
 	});
 });

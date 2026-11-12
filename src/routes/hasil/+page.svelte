@@ -1,30 +1,24 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import { normalizeReceiptCode } from '#lib/receipt-code.js';
 	import { formatWib } from '#lib/time.js';
 	import Countdown from '#lib/components/Countdown.svelte';
 	import Guilloche from '#lib/components/Guilloche.svelte';
 	import type { PageProps } from './$types';
 
-	let { data }: PageProps = $props();
+	let { data, form }: PageProps = $props();
 
+	// `null` bila panitia memilih "persentase saja" (migrations/0009_rincian_hasil.sql).
 	let p = $derived(data.participation);
 	let results = $derived(data.results);
-	let total = $derived(results ? results.tally.reduce((sum, row) => sum + row.votes, 0) : 0);
-	let maxVotes = $derived(results ? Math.max(1, ...results.tally.map((r) => r.votes)) : 1);
-
-	let codeInput = $state('');
-	let lookupCode = $derived(normalizeReceiptCode(codeInput));
+	let maxPercent = $derived(results ? Math.max(0.1, ...results.tally.map((r) => r.percent)) : 1);
 	let audit = $derived(results?.audit ?? null);
-	let found = $derived(
-		audit && lookupCode.length === 11
-			? (audit.ballots.find((b) => b.code === lookupCode) ?? null)
-			: undefined
-	);
+	let lookingUp = $state(false);
 
-	let turnout = $derived(p.eligible ? (p.voted / p.eligible) * 100 : 0);
+	let turnout = $derived(p && p.eligible ? (p.voted / p.eligible) * 100 : 0);
 
 	const pct = (n: number, of: number) => (of ? `${Math.round((n / of) * 1000) / 10}%` : '0%');
+	const percentText = (n: number) => `${n.toLocaleString('id-ID', { maximumFractionDigits: 1 })}%`;
 </script>
 
 <svelte:head>
@@ -37,23 +31,32 @@
 		<h1>{data.election.title}</h1>
 	</header>
 
-	<dl class="facts rise" style:--i="1">
-		<div>
-			<dt>Sudah memilih</dt>
-			<dd class="mono">{p.voted}</dd>
-		</div>
-		<div>
-			<dt>Pemilih terdaftar</dt>
-			<dd class="mono">{p.eligible}</dd>
-		</div>
-		<div>
-			<dt>Partisipasi</dt>
-			<dd class="mono">{pct(p.voted, p.eligible)}</dd>
-		</div>
-		<div class="facts-meter" aria-hidden="true">
-			<span style:width="{turnout}%"></span>
-		</div>
-	</dl>
+	{#if data.adminView}
+		<p class="admin-note rise" style:--i="1">
+			<strong>Tampilan panitia.</strong> Publik hanya melihat persentase suara setiap calon; jumlah DPT,
+			partisipasi, jumlah suara, dan CSV surat suara tidak ditampilkan kepada mereka.
+		</p>
+	{/if}
+
+	{#if p}
+		<dl class="facts rise" style:--i="1">
+			<div>
+				<dt>Sudah memilih</dt>
+				<dd class="mono">{p.voted}</dd>
+			</div>
+			<div>
+				<dt>Pemilih terdaftar</dt>
+				<dd class="mono">{p.eligible}</dd>
+			</div>
+			<div>
+				<dt>Partisipasi</dt>
+				<dd class="mono">{pct(p.voted, p.eligible)}</dd>
+			</div>
+			<div class="facts-meter" aria-hidden="true">
+				<span style:width="{turnout}%"></span>
+			</div>
+		</dl>
+	{/if}
 
 	{#if !results}
 		<div class="sealed rise" style:--i="2">
@@ -90,7 +93,7 @@
 			<h2 id="perolehan">Perolehan <em>suara</em></h2>
 			<ol class="tally">
 				{#each results.tally as row, i (row.number)}
-					{@const top = row.votes > 0 && row.votes === maxVotes}
+					{@const top = row.top}
 					<li class:top style:--i={i}>
 						<span class="no" aria-hidden="true">{row.number}</span>
 						<div class="tally-main">
@@ -102,79 +105,107 @@
 								{#if top}<span class="badge">Suara terbanyak</span>{/if}
 							</p>
 							<div class="bar" aria-hidden="true">
-								<span style:width="{(row.votes / maxVotes) * 100}%"></span>
+								<span style:width="{(row.percent / maxPercent) * 100}%"></span>
 							</div>
 						</div>
 						<p class="tally-votes">
-							<span class="pct">{pct(row.votes, total)}</span>
-							<span class="count mono">{row.votes} suara</span>
+							<span class="pct">{percentText(row.percent)}</span>
+							{#if row.votes !== null}
+								<span class="count mono">{row.votes} suara</span>
+							{/if}
 						</p>
 					</li>
 				{/each}
 			</ol>
-			<p class="check" class:bad={p.voted !== p.ballots}>
-				{#if p.voted === p.ballots}
+			<p class="check" class:bad={!results.balanced}>
+				{#if results.balanced}
 					<span class="check-icon" aria-hidden="true">✓</span>
-					Jumlah surat suara ({p.ballots}) sama dengan jumlah pemilih yang tercatat sudah memilih ({p.voted}).
+					Jumlah surat suara{p ? ` (${p.ballots})` : ''} sama dengan jumlah pemilih yang tercatat sudah
+					memilih{p ? ` (${p.voted})` : ''}.
 				{:else}
 					<span class="check-icon" aria-hidden="true">!</span>
-					Jumlah surat suara ({p.ballots}) berbeda dengan jumlah pemilih yang tercatat sudah memilih
-					({p.voted}).
+					Jumlah surat suara{p ? ` (${p.ballots})` : ''} berbeda dengan jumlah pemilih yang tercatat sudah
+					memilih{p ? ` (${p.voted})` : ''}.
 				{/if}
 			</p>
+			{#if !p}
+				<p class="muted">Panitia hanya mempublikasikan persentase suara setiap calon.</p>
+			{/if}
 		</section>
 
 		{#if audit}
-			<div class="split">
+			<div class="split" class:single={!audit.csv}>
 				<section class="lookup-card" aria-labelledby="periksa">
 					<h2 id="periksa">Periksa <em>suaramu</em></h2>
 					<p class="muted">
 						Tidak wajib. Ketik kode tanda terima yang kamu simpan jika ingin memastikan suaramu
 						tercatat, misalnya saat ada sengketa.
 					</p>
-					<label class="lookup">
-						<span>Kode tanda terima</span>
-						<input
-							bind:value={codeInput}
-							placeholder="XXXXX-XXXXX"
-							autocomplete="off"
-							spellcheck="false"
-							maxlength="16"
-						/>
-					</label>
-					{#if found}
-						<p class="msg msg-ok">
-							Kode <strong class="mono">{found.code}</strong> tercatat untuk calon
-							<strong>No. {found.number}</strong>.
+					<form
+						method="POST"
+						action="?/periksa"
+						class="lookup-form"
+						use:enhance={() => {
+							lookingUp = true;
+							return async ({ update }) => {
+								await update({ reset: false });
+								lookingUp = false;
+							};
+						}}
+					>
+						<label class="lookup">
+							<span>Kode tanda terima</span>
+							<input
+								name="code"
+								value={form?.code ?? ''}
+								placeholder="XXXXX-XXXXX"
+								autocomplete="off"
+								spellcheck="false"
+								maxlength="16"
+								required
+							/>
+						</label>
+						<button class="button" type="submit" disabled={lookingUp}>
+							{lookingUp ? 'Memeriksa…' : 'Periksa'}
+						</button>
+					</form>
+					{#if form?.lookupError}
+						<p class="msg msg-error" role="alert"><span>{form.lookupError}</span></p>
+					{:else if form && 'number' in form && form.number !== null}
+						<p class="msg msg-ok" role="status">
+							Kode <strong class="mono">{form.code}</strong> tercatat untuk calon
+							<strong>No. {form.number}</strong>.
 						</p>
-					{:else if found === null}
-						<p class="msg msg-error">
+					{:else if form && 'number' in form}
+						<p class="msg msg-error" role="status">
 							<span>
-								Kode <strong class="mono">{lookupCode}</strong> tidak ditemukan. Periksa kembali penulisannya;
+								Kode <strong class="mono">{form.code}</strong> tidak ditemukan. Periksa kembali penulisannya;
 								jika tetap tidak ada, laporkan ke panitia dan saksi.
 							</span>
 						</p>
 					{/if}
 				</section>
 
-				<section class="audit" aria-labelledby="audit">
-					<h2 id="audit">Audit <em>mandiri</em></h2>
-					<p>
-						Semua {audit.ballots.length} surat suara (kode → nomor calon) dapat diunduh dan dihitung ulang
-						oleh siapa saja.
-					</p>
-					<a class="button button-gold" href={resolve('/hasil/surat-suara.csv')} download>
-						Unduh daftar surat suara (CSV)
-					</a>
-					<p class="hash-label">SHA-256 berkas</p>
-					<p class="hash mono">{audit.sha256}</p>
-					<p class="audit-help">
-						Periksa keaslian berkas dengan <code
-							>shasum -a 256 surat-suara-pemira-pmk-itera-2027.csv</code
-						>
-						(macOS/Linux) atau <code>certutil -hashfile &lt;berkas&gt; SHA256</code> (Windows).
-					</p>
-				</section>
+				{#if audit.csv}
+					<section class="audit" aria-labelledby="audit">
+						<h2 id="audit">Audit <em>mandiri</em></h2>
+						<p>
+							Semua {audit.csv.count} surat suara (kode → nomor calon) dapat diunduh dan dihitung ulang
+							oleh siapa saja.
+						</p>
+						<a class="button button-gold" href={resolve('/hasil/surat-suara.csv')} download>
+							Unduh daftar surat suara (CSV)
+						</a>
+						<p class="hash-label">SHA-256 berkas</p>
+						<p class="hash mono">{audit.csv.sha256}</p>
+						<p class="audit-help">
+							Periksa keaslian berkas dengan <code
+								>shasum -a 256 surat-suara-pemira-pmk-itera-2027.csv</code
+							>
+							(macOS/Linux) atau <code>certutil -hashfile &lt;berkas&gt; SHA256</code> (Windows).
+						</p>
+					</section>
+				{/if}
 			</div>
 		{/if}
 
@@ -230,6 +261,15 @@
 		text-decoration-color: var(--gold);
 		text-decoration-thickness: 2px;
 		text-underline-offset: 5px;
+	}
+
+	.admin-note {
+		margin-top: 24px;
+		padding: 12px 16px;
+		border-radius: var(--radius-sm);
+		background: var(--sand);
+		font-size: 14px;
+		color: var(--brown-dark);
 	}
 
 	/* Angka partisipasi */
@@ -470,6 +510,17 @@
 		margin-top: 56px;
 	}
 
+	.split.single {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.lookup-form {
+		display: grid;
+		justify-items: start;
+		gap: 12px;
+		margin-top: 6px;
+	}
+
 	.lookup-card,
 	.exceptions {
 		max-width: 760px;
@@ -506,6 +557,8 @@
 	}
 
 	.lookup-card {
+		padding: clamp(22px, 3.5vw, 36px);
+		border-radius: var(--radius);
 		background: var(--paper-light);
 		box-shadow:
 			var(--shadow-soft),

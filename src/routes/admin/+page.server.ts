@@ -14,6 +14,7 @@ import {
 	isAuditPublic,
 	isPublished,
 	setAuditPublicStatement,
+	setResultsDetailStatement,
 	setResultsModeStatement
 } from '#lib/server/results.js';
 import { boothCodeStats, usedExceptionNims } from '#lib/server/tps.js';
@@ -134,6 +135,35 @@ export const actions: Actions = {
 				mode === 'auto'
 					? 'Hasil akan tampil otomatis begitu pemungutan suara ditutup.'
 					: 'Hasil baru tampil setelah dipublikasikan dua admin (atau super admin).'
+		};
+	},
+
+	/**
+	 * Rincian hasil untuk publik (migrations/0009_rincian_hasil.sql): jumlah suara, atau persentase
+	 * saja. Hanya super admin, boleh diubah kapan saja, tercatat di audit log.
+	 */
+	resultsDetail: async ({ locals, request }) => {
+		const admin = requireSuperAdmin(locals);
+		const form = await request.formData();
+		const detail = form.get('detail');
+		if (detail !== 'counts' && detail !== 'percent') {
+			return fail(400, { error: 'Pilihan rincian hasil tidak dikenal.' });
+		}
+
+		const db = getDb();
+		try {
+			await db.batch([
+				setResultsDetailStatement(db, detail),
+				auditStatement(db, admin, 'results.detail', { detail })
+			]);
+		} catch (err) {
+			return fail(409, { error: describeDbError(err) ?? 'Gagal mengubah rincian hasil.' });
+		}
+		return {
+			ok:
+				detail === 'counts'
+					? 'Publik melihat jumlah suara, persentase, dan partisipasi.'
+					: 'Publik hanya melihat persentase suara setiap calon. Jumlah DPT, partisipasi, jumlah suara, dan CSV surat suara disembunyikan.'
 		};
 	},
 

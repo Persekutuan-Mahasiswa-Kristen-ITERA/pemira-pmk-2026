@@ -83,6 +83,13 @@ export function setAuditPublicStatement(db: D1Database, enabled: boolean): D1Pre
 
 export type ResultsMode = 'auto' | 'manual';
 
+/**
+ * Rincian hasil untuk publik (migrations/0009_rincian_hasil.sql). `percent`: publik hanya melihat
+ * persentase per calon; jumlah DPT, jumlah yang sudah memilih, partisipasi, jumlah suara, dan CSV surat
+ * suara tidak dikirim kepada publik. Admin selalu melihat angka lengkap.
+ */
+export type ResultsDetail = 'counts' | 'percent';
+
 export interface ResultsApproval {
 	email: string;
 	approvedAt: number;
@@ -91,6 +98,7 @@ export interface ResultsApproval {
 
 export interface ResultsRelease {
 	mode: ResultsMode;
+	detail: ResultsDetail;
 	approvals: ResultsApproval[];
 	/** Sudah dipublikasikan lewat tombol (dua admin berbeda, atau satu super admin). */
 	published: boolean;
@@ -113,8 +121,8 @@ export function resultsVisible(phase: ElectionPhase, release: ResultsRelease): b
 export async function getResultsRelease(db: D1Database): Promise<ResultsRelease> {
 	const [config, { results }] = await Promise.all([
 		db
-			.prepare('SELECT results_mode FROM election_config WHERE id = 1')
-			.first<{ results_mode: ResultsMode }>(),
+			.prepare('SELECT results_mode, results_detail FROM election_config WHERE id = 1')
+			.first<{ results_mode: ResultsMode; results_detail: ResultsDetail }>(),
 		db
 			.prepare(
 				'SELECT admin_email, approved_at, solo FROM results_approvals ORDER BY approved_at, admin_email'
@@ -126,12 +134,79 @@ export async function getResultsRelease(db: D1Database): Promise<ResultsRelease>
 		approvedAt: r.approved_at,
 		solo: r.solo === 1
 	}));
-	return { mode: config?.results_mode ?? 'auto', approvals, published: isPublished(approvals) };
+	return {
+		mode: config?.results_mode ?? 'auto',
+		detail: config?.results_detail ?? 'counts',
+		approvals,
+		published: isPublished(approvals)
+	};
 }
 
 /** Pernyataan untuk mengubah mode publikasi; dijalankan dalam satu batch dengan audit log. */
 export function setResultsModeStatement(db: D1Database, mode: ResultsMode): D1PreparedStatement {
 	return db.prepare('UPDATE election_config SET results_mode = ? WHERE id = 1').bind(mode);
+}
+
+/** Pernyataan untuk mengubah rincian hasil publik; dijalankan dalam satu batch dengan audit log. */
+export function setResultsDetailStatement(
+	db: D1Database,
+	detail: ResultsDetail
+): D1PreparedStatement {
+	return db.prepare('UPDATE election_config SET results_detail = ? WHERE id = 1').bind(detail);
+}
+
+/** Apakah penampil ini boleh melihat angka (bukan hanya persentase). Admin selalu boleh. */
+export function showsCounts(detail: ResultsDetail, isAdmin: boolean): boolean {
+	return detail === 'counts' || isAdmin;
+}
+
+export interface ShownTallyRow {
+	number: number;
+	name: string;
+	/** Persen dari seluruh surat suara, satu desimal; jumlah semua baris tepat 100 (bila ada suara). */
+	percent: number;
+	/** `null` bila penampil hanya boleh melihat persentase. */
+	votes: number | null;
+	/** Suara terbanyak (bisa lebih dari satu bila seri). */
+	top: boolean;
+}
+
+/**
+ * Perolehan suara untuk ditampilkan. Persentase dibulatkan ke 0,1% dengan metode sisa terbesar
+ * supaya jumlahnya tepat 100%. Pada `withCounts = false`, jumlah suara tidak ikut dikirim.
+ */
+export function shownTally(tally: TallyRow[], withCounts: boolean): ShownTallyRow[] {
+	const total = tally.reduce((sum, row) => sum + row.votes, 0);
+	const max = Math.max(0, ...tally.map((row) => row.votes));
+	const tenths = tally.map((row) => (total ? (row.votes * 1000) / total : 0));
+	const floors = tenths.map(Math.floor);
+	let left = total ? 1000 - floors.reduce((a, b) => a + b, 0) : 0;
+	const order = tenths
+		.map((t, i) => ({ i, rest: t - floors[i] }))
+		.sort((a, b) => b.rest - a.rest || a.i - b.i);
+	for (const { i } of order) {
+		if (left <= 0) break;
+		floors[i] += 1;
+		left -= 1;
+	}
+	return tally.map((row, i) => ({
+		number: row.number,
+		name: row.name,
+		percent: floors[i] / 10,
+		votes: withCounts ? row.votes : null,
+		top: row.votes > 0 && row.votes === max
+	}));
+}
+
+/** Nomor calon untuk satu kode tanda terima, atau `null` bila kode tidak ada. */
+export async function findBallot(db: D1Database, code: string): Promise<number | null> {
+	const row = await db
+		.prepare(
+			'SELECT c.number FROM ballots b JOIN candidates c ON c.id = b.candidate_id WHERE b.code = ?'
+		)
+		.bind(code)
+		.first<{ number: number }>();
+	return row?.number ?? null;
 }
 
 /** Pernyataan persetujuan publikasi; dijalankan dalam satu batch dengan audit log. */

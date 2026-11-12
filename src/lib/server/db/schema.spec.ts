@@ -483,3 +483,60 @@ describe('migrasi 0008 (publikasi hasil)', () => {
 		expect(() => approve('a@x.id', 2)).toThrow(/CHECK/);
 	});
 });
+
+describe('migrasi 0009 (rincian hasil)', () => {
+	let db: DatabaseSync;
+	beforeEach(() => {
+		db = freshDb();
+	});
+
+	it('berjalan di database yang sedang dipakai tanpa menyentuh suara, bawaan jumlah suara', () => {
+		const migration = (name: string) =>
+			readFileSync(join(process.cwd(), 'migrations', name), 'utf8');
+		const old = new DatabaseSync(':memory:');
+		old.exec('PRAGMA foreign_keys = ON;');
+		for (const file of [
+			'0001_init.sql',
+			'0002_voters_by_nim.sql',
+			'0003_admins_and_photos.sql',
+			'0004_tps.sql',
+			'0005_audit_publik.sql',
+			'0006_uji_coba_publik.sql',
+			'0007_super_admin_kode.sql',
+			'0008_publikasi_hasil.sql'
+		]) {
+			old.exec(migration(file));
+		}
+		old.exec(`INSERT INTO candidates (id, number, name) VALUES (1, 1, 'Satu')`);
+		old.exec(`INSERT INTO voters (nim, name) VALUES ('${ALICE}', 'Alice')`);
+		setSchedule(old, now() - 60, now() + 3600);
+		castVote(old, ALICE, 'AAAA-BBBB', 1);
+
+		old.exec(migration('0009_rincian_hasil.sql'));
+
+		expect(count(old, 'ballots')).toBe(1);
+		expect(old.prepare('SELECT results_detail FROM election_config').get()).toEqual({
+			results_detail: 'counts'
+		});
+	});
+
+	it('hanya menerima counts atau percent', () => {
+		expect(() => db.prepare("UPDATE election_config SET results_detail = 'x'").run()).toThrow(
+			/CHECK/
+		);
+	});
+
+	it('boleh diubah kapan saja; jadwal tetap terkunci', () => {
+		setSchedule(db, now() - 60, now() + 3600);
+		db.prepare("UPDATE election_config SET results_detail = 'percent'").run();
+		db.prepare('UPDATE election_config SET closes_at = unixepoch()').run(); // tutup darurat
+		db.prepare("UPDATE election_config SET results_detail = 'counts'").run();
+		db.prepare("UPDATE election_config SET results_detail = 'percent'").run();
+		expect(db.prepare('SELECT results_detail FROM election_config').get()).toEqual({
+			results_detail: 'percent'
+		});
+		expect(() => db.prepare('UPDATE election_config SET closes_at = ?').run(now() + 3600)).toThrow(
+			/schedule_locked/
+		);
+	});
+});
