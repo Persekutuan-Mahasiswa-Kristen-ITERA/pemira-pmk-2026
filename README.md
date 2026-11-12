@@ -240,7 +240,8 @@ wrangler.jsonc       Konfigurasi Cloudflare Pages, binding D1, dan APP_ENV (prod
 Deploy hanya lewat GitHub Actions ([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)), supaya
 versi yang berjalan selalu sama dengan commit yang tampil di footer situs:
 
-- **Production**: push tag `v*`, misalnya `git tag v1.0.0 && git push origin v1.0.0`.
+- **Production**: push tag `v*`, misalnya `git tag v1.0.0 && git push origin v1.0.0`. Deploy baru berjalan
+  setelah disetujui peninjau yang ditunjuk di environment `production`.
 - **Staging**: jalankan workflow _Deploy_ secara manual dari tab Actions (atau `pnpm deploy:staging`).
   Staging memakai database terpisah dan tersedia di `https://staging.pemira-pmk-itera.pages.dev`.
 

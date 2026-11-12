@@ -152,6 +152,9 @@ Tampilan memakai motif **surat suara kertas**. Pertahankan arah ini saat menamba
   menyebut database yang dipakai. Production diberi pita "Uji coba publik" selama
   `election_config.public_test = 1` (migrasi 0006); flag ini hanya dimatikan oleh
   `scripts/reset-uji-coba.sql`.
+- Pengaman GitHub: ruleset "Lindungi main" (wajib PR + CI `verify`, tanpa force push atau hapus) dan
+  environment `production` yang hanya menerima tag `v*` serta menunggu persetujuan (_Required reviewers_)
+  sebelum migrasi dan deploy berjalan. Setelah push tag, buka tab Actions dan klik _Review deployments_.
 - GitHub Actions memakai `CLOUDFLARE_API_TOKEN` (Pages Edit + D1 Edit) dan `CLOUDFLARE_ACCOUNT_ID`
   sebagai secret environment `production` dan `staging`, bukan secret repo. Di `deploy.yml` token hanya
   dipasang di langkah wrangler (migrasi dan deploy), bukan di install, tes, atau build.
