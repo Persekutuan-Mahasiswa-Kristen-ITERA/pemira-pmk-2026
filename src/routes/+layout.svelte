@@ -2,8 +2,7 @@
 	import '../app.css';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import favicon from '#lib/assets/favicon.svg';
-	import Seal from '#lib/components/Seal.svelte';
+	import logo from '#lib/assets/logo-pmk.png';
 	import type { LayoutProps } from './$types';
 
 	let { children, data }: LayoutProps = $props();
@@ -26,7 +25,8 @@
 </script>
 
 <svelte:head>
-	<link rel="icon" href={favicon} />
+	<link rel="icon" type="image/png" href={logo} />
+	<link rel="apple-touch-icon" href={logo} />
 </svelte:head>
 
 <a class="skip" href="#konten">Lewati ke konten</a>
@@ -68,7 +68,7 @@
 		class:crowded={(data.isAdmin || data.isOfficer) && data.userEmail}
 	>
 		<a class="brand" href={resolve('/')} aria-label="Pemira PMK ITERA, beranda">
-			<Seal size={42} />
+			<img class="brand-logo" src={logo} alt="" width="44" height="44" />
 			<span class="brand-text">
 				<span class="brand-name">Pemira <em>PMK ITERA</em></span>
 				<span class="brand-small">Pemilihan Ketua 2027</span>
@@ -124,6 +124,7 @@
 					<span class="commit" title={COMMIT}>{COMMIT.slice(0, 7)} (build lokal)</span>
 				{/if}
 			</p>
+			<p>Dikembangkan oleh <a href="https://mctm.web.id" rel="noopener">MCT</a></p>
 		</div>
 	</div>
 </footer>
@@ -172,6 +173,12 @@
 		gap: 12px;
 		min-width: 0;
 		text-decoration: none;
+	}
+
+	.brand-logo {
+		flex: none;
+		width: 44px;
+		height: 44px;
 	}
 
 	.brand-text {
