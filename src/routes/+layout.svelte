@@ -15,6 +15,9 @@
 	let path = $derived(page.url.pathname);
 
 	const PRODUCTION_URL = 'https://pemira.pmkitera.web.id';
+	// Jadwal reset uji coba publik (scripts/reset-uji-coba.sql) dan hari pemilihan resmi.
+	const PUBLIC_TEST_RESET = 'Rabu, 18 November 2026 pukul 20.00 WIB';
+	const ELECTION_DAY = 'Kamis, 19 November 2026';
 	const ENV_LABEL = {
 		production: 'Resmi (production)',
 		staging: 'Uji coba (staging)',
@@ -29,7 +32,7 @@
 <a class="skip" href="#konten">Lewati ke konten</a>
 
 <header class="topbar">
-	{#if data.appEnv !== 'production'}
+	{#if data.appEnv !== 'production' || data.publicTest}
 		<div class="env-ribbon" role="note">
 			<div class="container env-inner">
 				{#if data.appEnv === 'staging'}
@@ -38,6 +41,11 @@
 						resmi.
 					</p>
 					<a href={PRODUCTION_URL} rel="external">Ke situs resmi →</a>
+				{:else if data.publicTest}
+					<p>
+						<strong>Uji coba publik.</strong> Suara di sini tidak dihitung. Semua data pemilihan uji
+						dihapus pada {PUBLIC_TEST_RESET}; pemilihan resmi {ELECTION_DAY}.
+					</p>
 				{:else if data.demo}
 					<p>
 						<strong>Mode demo.</strong> Data dummy di komputer ini{#if data.userEmail}; masuk
@@ -102,7 +110,8 @@
 			<p>Persekutuan Mahasiswa Kristen · Institut Teknologi Sumatera</p>
 			<p class="env-line" data-env={data.appEnv}>
 				<span class="env-dot" aria-hidden="true"></span>
-				Database: <strong>{ENV_LABEL[data.appEnv]}</strong>
+				Database: <strong>{ENV_LABEL[data.appEnv]}</strong>{#if data.publicTest}
+					· mode uji coba publik{/if}
 			</p>
 			<p>
 				Kode sumber terbuka untuk diaudit di

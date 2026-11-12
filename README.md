@@ -180,21 +180,22 @@ supaya bisa membuka `/admin` lewat **"Masuk dengan akun panitia"**.
 <details>
 <summary><b>Perintah</b></summary>
 
-| Perintah                     | Fungsi                                                                    |
-| ---------------------------- | ------------------------------------------------------------------------- |
-| `pnpm dev`                   | Server pengembangan (pilih mode)                                          |
-| `pnpm test`                  | Tes unit, termasuk tes aturan database                                    |
-| `pnpm check`                 | Pemeriksaan tipe                                                          |
-| `pnpm lint`                  | Prettier + ESLint                                                         |
-| `pnpm build`                 | Build untuk Cloudflare Pages                                              |
-| `pnpm preview`               | Jalankan hasil build secara lokal dengan runtime Cloudflare               |
-| `pnpm gen`                   | Buat ulang tipe Cloudflare setelah mengubah `wrangler.jsonc`              |
-| `pnpm db:reset:local`        | Hapus dan buat ulang database D1 lokal                                    |
-| `pnpm db:seed:local`         | Isi database lokal dengan data contoh                                     |
-| `pnpm db:seed:panitia:local` | Isi admin, petugas TPS, dan audit log fiktif (lokal)                      |
-| `pnpm db:demo:local`         | Kosongkan DB lokal lalu isi simulasi pemilihan lengkap yang sudah ditutup |
-| `pnpm db:reset:staging`      | Kosongkan database **staging** (untuk simulasi). Bukan production.        |
-| `pnpm db:seed:demo`          | Isi database lokal dengan data dummy mode demo                            |
+| Perintah                     | Fungsi                                                                                                            |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                   | Server pengembangan (pilih mode)                                                                                  |
+| `pnpm test`                  | Tes unit, termasuk tes aturan database                                                                            |
+| `pnpm check`                 | Pemeriksaan tipe                                                                                                  |
+| `pnpm lint`                  | Prettier + ESLint                                                                                                 |
+| `pnpm build`                 | Build untuk Cloudflare Pages                                                                                      |
+| `pnpm preview`               | Jalankan hasil build secara lokal dengan runtime Cloudflare                                                       |
+| `pnpm gen`                   | Buat ulang tipe Cloudflare setelah mengubah `wrangler.jsonc`                                                      |
+| `pnpm db:reset:local`        | Hapus dan buat ulang database D1 lokal                                                                            |
+| `pnpm db:seed:local`         | Isi database lokal dengan data contoh                                                                             |
+| `pnpm db:seed:panitia:local` | Isi admin, petugas TPS, dan audit log fiktif (lokal)                                                              |
+| `pnpm db:demo:local`         | Kosongkan DB lokal lalu isi simulasi pemilihan lengkap yang sudah ditutup                                         |
+| `pnpm db:reset:staging`      | Kosongkan database **staging** (untuk simulasi). Bukan production.                                                |
+| `pnpm db:reset:uji-coba <t>` | Akhiri uji coba publik: hapus data pemilihan uji, matikan pita (lihat [panduan panitia](docs/panduan-panitia.md)) |
+| `pnpm db:seed:demo`          | Isi database lokal dengan data dummy mode demo                                                                    |
 
 </details>
 

@@ -34,3 +34,14 @@ export async function getElectionStatus(db: D1Database): Promise<ElectionStatus>
 	// Waktu diambil dari database, sumber waktu yang sama dengan trigger.
 	return { ...config, phase: electionPhase(config, row.now) };
 }
+
+/**
+ * Mode uji coba publik (migrations/0006_uji_coba_publik.sql): situs resmi dipakai publik untuk uji
+ * coba sebelum hari-H. Dimatikan hanya oleh scripts/reset-uji-coba.sql, bersamaan dengan data ujinya.
+ */
+export async function isPublicTest(db: D1Database): Promise<boolean> {
+	const row = await db
+		.prepare('SELECT public_test FROM election_config WHERE id = 1')
+		.first<{ public_test: number }>();
+	return row?.public_test === 1;
+}
