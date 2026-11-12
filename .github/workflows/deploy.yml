@@ -4,8 +4,10 @@
 # - Production: push tag `v*` (mis. `git tag v1.0.0 && git push origin v1.0.0`).
 # - Staging: jalankan manual dari tab Actions (workflow_dispatch).
 #
-# Butuh secret repo: CLOUDFLARE_API_TOKEN (izin: Cloudflare Pages Edit + D1 Edit)
-# dan CLOUDFLARE_ACCOUNT_ID.
+# Butuh secret CLOUDFLARE_API_TOKEN (izin: Cloudflare Pages Edit + D1 Edit) dan
+# CLOUDFLARE_ACCOUNT_ID, sebaiknya sebagai secret environment `production`/`staging`, bukan secret
+# repo. Token hanya dipasang di langkah wrangler, supaya `pnpm install`, tes, dan build tidak bisa
+# membacanya.
 name: Deploy
 
 on:
@@ -32,8 +34,6 @@ jobs:
     environment: ${{ github.event.inputs.target || 'production' }}
     env:
       TARGET: ${{ github.event.inputs.target || 'production' }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -46,6 +46,9 @@ jobs:
       - run: pnpm build
 
       - name: Migrasi database
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           if [ "$TARGET" = "production" ]; then
             pnpm wrangler d1 migrations apply pemira-db --remote
@@ -55,6 +58,9 @@ jobs:
 
       # Cloudflare Pages: branch `main` = production, branch lain = preview (staging).
       - name: Deploy ke Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           if [ "$TARGET" = "production" ]; then
             pnpm wrangler pages deploy --branch main --commit-hash "$GITHUB_SHA"
