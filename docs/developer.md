@@ -33,11 +33,13 @@ Browser ──► Cloudflare Pages (SvelteKit, server-side) ──► Cloudflare
   di secret `SUPER_ADMIN_EMAILS`, `admin` untuk email di tabel `admins` (diundang super admin lewat
   `/admin/panitia`). Pakai `requireAdmin(locals)` atau `requireSuperAdmin(locals)` dari
   `src/lib/server/admin.ts`. **Petugas TPS** (`locals.officer`, tabel `officers`) hanya boleh membuka
-  `/petugas`; pakai `requireOfficer(locals)`. Petugas bukan admin: `requireAdmin` menolaknya.
+  `/petugas`; pakai `requireOfficer(locals)`, yang juga menerima super admin (bukan admin biasa). Petugas
+  bukan admin: `requireAdmin` menolaknya.
 - **Wajib di TPS** (`migrations/0004_tps.sql`, `src/lib/server/tps.ts`): trigger di `voted` menolak suara
   tanpa baris `vote_passes` yang masih berlaku untuk NIM itu, dan menghapus baris itu begitu suara masuk.
   Izin dibuat dengan menukar **kode TPS** (`booth_codes`, sekali pakai, 2 menit, tidak terkait NIM) di action
-  `/pilih?/unlock`, atau **kode pengecualian** (`exception_codes`, terikat NIM, dua admin berbeda, 5 menit)
+  `/pilih?/unlock`, atau **kode pengecualian** (`exception_codes`, terikat NIM, dua admin berbeda atau
+  super admin sendiri dengan `solo = 1` (`migrations/0007_super_admin_kode.sql`), 5 menit)
   di action `/masuk?/code`. Token acak izin disimpan di cookie httpOnly `pemira_pass` (yang disimpan di
   database hanya hash-nya) dan dibaca di hooks menjadi `locals.pass`. Untuk jalur pengecualian, `locals.pass`
   sekaligus menjadi identitas pemilih (tanpa `locals.user`). Kode hanya disimpan sebagai SHA-256.

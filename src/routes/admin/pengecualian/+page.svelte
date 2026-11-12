@@ -23,8 +23,9 @@
 	Untuk pemilih di TPS yang benar-benar tidak bisa masuk dengan Google, misalnya akunnya terkunci
 	atau dinonaktifkan. Coba dulu browser lain atau reset akun lewat UPA TIK. Satu admin mengajukan,
 	admin
-	<strong>lain</strong> menyetujui dari perangkatnya sendiri. Kode berlaku 5 menit dan hanya bisa dipakai
-	sekali. Daftar NIM yang memakai jalur ini diumumkan setelah pemilihan ditutup.
+	<strong>lain</strong> menyetujui dari perangkatnya sendiri. Super admin boleh langsung membuat kode
+	tanpa admin kedua. Kode berlaku 5 menit dan hanya bisa dipakai sekali. Daftar NIM yang memakai jalur
+	ini diumumkan setelah pemilihan ditutup.
 </p>
 
 {#if form?.error}<p class="msg-error" role="alert">{form.error}</p>{/if}
@@ -45,8 +46,22 @@
 {#if data.election.phase !== 'open'}
 	<p class="panel hint">Pengajuan hanya bisa dibuat saat pemungutan suara dibuka.</p>
 {:else}
-	<h2>Ajukan</h2>
-	<form method="POST" action="?/request" use:enhance class="panel">
+	<h2>{data.isSuperAdmin ? 'Ajukan atau buat kode' : 'Ajukan'}</h2>
+	<form
+		method="POST"
+		action="?/request"
+		use:enhance={({ submitter, formData, cancel }) => {
+			if (submitter?.getAttribute('formaction') !== '?/issue') return;
+			const nim = String(formData.get('nim') ?? '').trim();
+			if (
+				!confirm(
+					`Sudah mencocokkan KTM pemilih NIM ${nim}? Kode langsung dibuat tanpa persetujuan admin lain dan tercatat di audit log.`
+				)
+			)
+				cancel();
+		}}
+		class="panel"
+	>
 		<label class="field">
 			NIM (cocokkan dengan KTM)
 			<input name="nim" inputmode="numeric" autocomplete="off" required placeholder="122140001" />
@@ -61,7 +76,14 @@
 				maxlength="300"
 				placeholder="Contoh: akun student dinonaktifkan, sudah dicoba di dua browser"></textarea>
 		</label>
-		<button class="button" type="submit">Ajukan</button>
+		<div class="form-actions">
+			<button class="button" type="submit">Ajukan</button>
+			{#if data.isSuperAdmin}
+				<button class="button button-ghost" type="submit" formaction="?/issue">
+					Buat kode langsung (super admin)
+				</button>
+			{/if}
+		</div>
 	</form>
 {/if}
 
@@ -87,7 +109,8 @@
 						<td class="reason">{e.reason}</td>
 						<td class="meta">
 							{e.requestedBy}<br />{formatWib(e.requestedAt)}
-							{#if e.approvedBy}<br />Disetujui {e.approvedBy}{/if}
+							{#if e.solo}<br />Dibuat langsung oleh super admin, tanpa admin kedua{:else if e.approvedBy}<br
+								/>Disetujui {e.approvedBy}{/if}
 						</td>
 						<td><span class="status status-{e.status}">{STATUS[e.status]}</span></td>
 						<td class="actions"
@@ -156,6 +179,12 @@
 		font-weight: 600;
 		letter-spacing: 0.08em;
 		color: var(--paper-light);
+	}
+
+	.form-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
 	}
 
 	.scroll {

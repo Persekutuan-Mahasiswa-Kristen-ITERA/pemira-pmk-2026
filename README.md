@@ -71,19 +71,20 @@ hanya didapat dengan salah satu cara berikut, dan keduanya diatur di
   dikaitkan ke NIM**. Pemilih tetap harus login Google dengan akunnya sendiri, jadi petugas tidak bisa memilih
   atas nama mahasiswa yang tidak hadir.
 - **Kode pengecualian**: untuk pemilih yang benar-benar tidak bisa login Google. Kode terikat ke satu NIM,
-  diajukan satu admin, dan disetujui **admin lain** (database menolak penyetuju yang sama). Kode berlaku
-  5 menit dan sekali pakai. Setelah ditutup, daftar NIM yang memakai jalur ini diumumkan di `/hasil`, tanpa
-  pilihannya.
+  diajukan satu admin, dan disetujui **admin lain** (database menolak penyetuju yang sama). Super admin
+  boleh langsung membuat kode tanpa admin kedua; kode seperti itu ditandai di daftar pengajuan dan di audit
+  log. Kode berlaku 5 menit dan sekali pakai. Setelah ditutup, daftar NIM yang memakai jalur ini diumumkan
+  di `/hasil`, tanpa pilihannya.
 
 ## 👥 Siapa bisa apa
 
-| Peran                                  | Bisa                                                                                                                | Tidak bisa                                                                                                                 |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| **Publik**                             | Melihat calon, jadwal, dan angka partisipasi. Setelah ditutup: hasil, daftar surat suara, cek kode.                 | Melihat hasil sebelum pemungutan suara ditutup.                                                                            |
-| **Pemilih** (NIM terdaftar di DPT)     | Memilih satu kali di TPS dan menerima kode tanda terima.                                                            | Memilih dari luar TPS, memilih dua kali, atau mengubah pilihan.                                                            |
-| **Petugas TPS** (diundang super admin) | Membuat kode TPS sekali pakai dan mengecek apakah NIM ada di DPT.                                                   | Membuka panel admin, melihat siapa yang sudah memilih, membuat kode yang terikat ke NIM.                                   |
-| **Admin** (diundang super admin)       | Mengatur jadwal, calon dan foto, serta DPT sebelum dibuka; kode pengecualian (dua admin); tutup darurat; audit log. | Melihat pilihan siapa pun, melihat siapa yang sudah atau belum memilih (hanya jumlahnya), mengubah suara, membuka kembali. |
-| **Super admin** (`SUPER_ADMIN_EMAILS`) | Semua yang bisa dilakukan admin, ditambah mengundang dan mencabut admin serta Petugas TPS.                          | Sama dengan admin.                                                                                                         |
+| Peran                                  | Bisa                                                                                                                                               | Tidak bisa                                                                                                                 |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **Publik**                             | Melihat calon, jadwal, dan angka partisipasi. Setelah ditutup: hasil, daftar surat suara, cek kode.                                                | Melihat hasil sebelum pemungutan suara ditutup.                                                                            |
+| **Pemilih** (NIM terdaftar di DPT)     | Memilih satu kali di TPS dan menerima kode tanda terima.                                                                                           | Memilih dari luar TPS, memilih dua kali, atau mengubah pilihan.                                                            |
+| **Petugas TPS** (diundang super admin) | Membuat kode TPS sekali pakai dan mengecek apakah NIM ada di DPT.                                                                                  | Membuka panel admin, melihat siapa yang sudah memilih, membuat kode yang terikat ke NIM.                                   |
+| **Admin** (diundang super admin)       | Mengatur jadwal, calon dan foto, serta DPT sebelum dibuka; kode pengecualian (dua admin); tutup darurat; audit log.                                | Melihat pilihan siapa pun, melihat siapa yang sudah atau belum memilih (hanya jumlahnya), mengubah suara, membuka kembali. |
+| **Super admin** (`SUPER_ADMIN_EMAILS`) | Semua yang bisa dilakukan admin dan Petugas TPS, mengundang dan mencabut admin serta Petugas TPS, dan membuat kode pengecualian tanpa admin kedua. | Sama dengan admin.                                                                                                         |
 
 Semua tindakan admin tercatat di audit log yang tidak bisa diubah atau dihapus.
 

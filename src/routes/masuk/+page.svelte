@@ -167,7 +167,7 @@
 			<details class="code-login" open={Boolean(form?.codeError)}>
 				<summary>Tidak bisa masuk dengan Google?</summary>
 				<p class="code-hint">
-					Datang ke meja panitia di TPS dengan KTM. Jika akunmu memang tidak bisa dipakai, dua admin
+					Datang ke meja panitia di TPS dengan KTM. Jika akunmu memang tidak bisa dipakai, panitia
 					akan memberimu kode sekali pakai.
 				</p>
 				<form method="POST" action="?/code" use:enhance class="code-form">

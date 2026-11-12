@@ -165,7 +165,7 @@ export async function boothCodeStats(db: D1Database, createdBy?: string): Promis
 }
 
 // ---------------------------------------------------------------------------
-// Kode pengecualian (tanpa login Google; dua admin)
+// Kode pengecualian (tanpa login Google; dua admin, atau super admin sendiri)
 // ---------------------------------------------------------------------------
 
 export type ExceptionStatus = 'pending' | 'active' | 'used' | 'expired' | 'cancelled';
@@ -181,6 +181,8 @@ export interface ExceptionRow {
 	approvedAt: number | null;
 	expiresAt: number | null;
 	usedAt: number | null;
+	/** Dibuat langsung oleh super admin, tanpa persetujuan admin kedua. */
+	solo: boolean;
 	status: ExceptionStatus;
 }
 
@@ -188,7 +190,7 @@ export async function listExceptions(db: D1Database): Promise<ExceptionRow[]> {
 	const { results } = await db
 		.prepare(
 			`SELECT e.id, e.nim, v.name, e.reason, e.requested_by, e.requested_at, e.approved_by,
-			        e.approved_at, e.expires_at, e.used_at, e.cancelled_at, unixepoch() AS now
+			        e.approved_at, e.expires_at, e.used_at, e.cancelled_at, e.solo, unixepoch() AS now
 			 FROM exception_codes e JOIN voters v ON v.nim = e.nim
 			 ORDER BY e.requested_at DESC, e.id`
 		)
@@ -204,6 +206,7 @@ export async function listExceptions(db: D1Database): Promise<ExceptionRow[]> {
 			expires_at: number | null;
 			used_at: number | null;
 			cancelled_at: number | null;
+			solo: number;
 			now: number;
 		}>();
 	return results.map((r) => ({
@@ -217,6 +220,7 @@ export async function listExceptions(db: D1Database): Promise<ExceptionRow[]> {
 		approvedAt: r.approved_at,
 		expiresAt: r.expires_at,
 		usedAt: r.used_at,
+		solo: r.solo === 1,
 		status:
 			r.used_at !== null
 				? 'used'
@@ -233,13 +237,11 @@ export async function listExceptions(db: D1Database): Promise<ExceptionRow[]> {
 export type ExceptionRequestResult =
 	{ ok: true; id: string; name: string } | { ok: false; reason: 'not_eligible' | 'already_voted' };
 
-/** Pengajuan oleh admin pertama. Statement audit dibuat pemanggil dari hasilnya. */
-export async function requestException(
+/** Nama pemilih jika NIM ada di DPT dan belum memilih. */
+async function exceptionCandidate(
 	db: D1Database,
-	nim: string,
-	reason: string,
-	requestedBy: string
-): Promise<ExceptionRequestResult> {
+	nim: string
+): Promise<{ ok: true; name: string } | { ok: false; reason: 'not_eligible' | 'already_voted' }> {
 	const voter = await db
 		.prepare('SELECT name FROM voters WHERE nim = ?')
 		.bind(nim)
@@ -248,6 +250,18 @@ export async function requestException(
 	if ((await getVoterState(db, nim)) === 'already_voted') {
 		return { ok: false, reason: 'already_voted' };
 	}
+	return { ok: true, name: voter.name };
+}
+
+/** Pengajuan oleh admin pertama. Statement audit dibuat pemanggil dari hasilnya. */
+export async function requestException(
+	db: D1Database,
+	nim: string,
+	reason: string,
+	requestedBy: string
+): Promise<ExceptionRequestResult> {
+	const voter = await exceptionCandidate(db, nim);
+	if (!voter.ok) return voter;
 	const id = randomToken().slice(0, 16);
 	await db
 		.prepare('INSERT INTO exception_codes (id, nim, reason, requested_by) VALUES (?, ?, ?, ?)')
@@ -300,6 +314,38 @@ export async function approveException(
 		.first<{ expires_at: number }>();
 	if (!updated) return { ok: false, reason: 'not_pending' };
 	return { ok: true, nim: row.nim, code, expiresAt: updated.expires_at };
+}
+
+export type IssueResult =
+	| { ok: true; id: string; name: string; code: string; expiresAt: number }
+	| { ok: false; reason: 'not_eligible' | 'already_voted' };
+
+/**
+ * Kode pengecualian langsung dari super admin, tanpa admin kedua (`solo = 1`). Pemanggil WAJIB
+ * sudah memastikan `issuedBy` adalah super admin: database tidak bisa memeriksanya. Kode hanya
+ * dikembalikan sekali, ke pembuatnya.
+ */
+export async function issueExceptionDirect(
+	db: D1Database,
+	nim: string,
+	reason: string,
+	issuedBy: string
+): Promise<IssueResult> {
+	const voter = await exceptionCandidate(db, nim);
+	if (!voter.ok) return voter;
+	const id = randomToken().slice(0, 16);
+	const code = generateCode(8);
+	const row = await db
+		.prepare(
+			`INSERT INTO exception_codes
+				(id, nim, reason, requested_by, approved_by, approved_at, code_hash, expires_at, solo)
+			 VALUES (?1, ?2, ?3, ?4, ?4, unixepoch(), ?5, unixepoch() + ?6, 1)
+			 RETURNING expires_at`
+		)
+		.bind(id, nim, reason.trim(), issuedBy, await hashCode(code), EXCEPTION_CODE_TTL)
+		.first<{ expires_at: number }>();
+	if (!row) throw new Error('Gagal membuat kode pengecualian');
+	return { ok: true, id, name: voter.name, code, expiresAt: row.expires_at };
 }
 
 /** Batalkan pengajuan atau kode yang belum dipakai. */

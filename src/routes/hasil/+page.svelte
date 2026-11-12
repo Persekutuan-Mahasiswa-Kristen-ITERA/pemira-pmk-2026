@@ -179,8 +179,8 @@
 			{:else}
 				<p class="muted">
 					NIM berikut tidak bisa masuk dengan Google, sehingga masuk dengan kode sekali pakai yang
-					disetujui dua admin di TPS. Pilihannya tetap rahasia. Jika NIM-mu ada di sini padahal kamu
-					tidak pernah memakai jalur ini, laporkan ke panitia dan saksi.
+					disetujui dua admin atau dibuat super admin di TPS. Pilihannya tetap rahasia. Jika NIM-mu
+					ada di sini padahal kamu tidak pernah memakai jalur ini, laporkan ke panitia dan saksi.
 				</p>
 				<ul class="nim-list">
 					{#each results.exceptionNims as nim (nim)}

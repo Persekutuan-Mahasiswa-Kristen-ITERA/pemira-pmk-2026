@@ -94,7 +94,7 @@ export const actions: Actions = {
 		redirect(303, role !== null ? '/admin' : officer ? '/petugas' : '/pilih');
 	},
 
-	/** Jalur pengecualian: masuk dengan kode dari dua admin, tanpa login Google. */
+	/** Jalur pengecualian: masuk dengan kode dari dua admin (atau super admin), tanpa login Google. */
 	code: async ({ request, cookies, url }) => {
 		const code = String((await request.formData()).get('code') ?? '');
 		if (!code.trim()) return fail(400, { codeError: 'Masukkan kode dari panitia.' });
