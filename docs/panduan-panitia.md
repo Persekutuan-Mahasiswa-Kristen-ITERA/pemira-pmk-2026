@@ -121,7 +121,7 @@ dan footer menulis _mode uji coba publik_. Suara yang masuk selama uji tidak dih
 3. Atur jadwal uji di **Admin → Ringkasan & jadwal**, lalu publik boleh mencoba alur lengkap.
 4. **(developer) Rabu, 18 November 2026 pukul 20.00 WIB:** `pnpm db:reset:uji-coba production`. Skrip
    mencatat bookmark Time Travel, mengarsipkan audit log ke `data/`, menghapus surat suara, tanda sudah
-   memilih, kode TPS, kode pengecualian, izin memilih, dan audit log, mengosongkan jadwal, mematikan pita, lalu
+   memilih, kode TPS, kode pengecualian, izin memilih, persetujuan publikasi hasil, dan audit log, mengosongkan jadwal, mematikan pita, lalu
    memverifikasi hasilnya. Calon, foto, DPT, admin, dan Petugas TPS tetap. Skrip menolak berjalan bila pita
    sudah mati, jadi tidak mungkin terjalankan saat pemilihan resmi. Latih dulu di staging (lihat komentar di
    `scripts/reset-uji-coba.mjs`).
@@ -152,13 +152,24 @@ dan footer menulis _mode uji coba publik_. Suara yang masuk selama uji tidak dih
 
 ### 5. Penutupan dan rekapitulasi
 
-1. Pemungutan suara tertutup otomatis sesuai jadwal.
+**Mode publikasi hasil** (Admin → Ringkasan → _Publikasi hasil_, hanya super admin, bisa diubah kapan saja):
+
+- **Tampil otomatis**: begitu pemungutan suara ditutup, perolehan suara langsung tampil di halaman Hasil.
+- **Tunggu tombol Publikasikan**: setelah ditutup, perolehan suara tidak tampil kepada siapa pun, termasuk
+  admin. Dua admin berbeda masing-masing menekan **Setujui publikasi hasil** dari perangkatnya sendiri, atau
+  super admin menekan **Publikasikan hasil sekarang**. Persetujuan tidak bisa dibatalkan. Umumkan mode yang
+  dipakai sebelum hari pemilihan.
+
+1. Pemungutan suara tertutup otomatis sesuai jadwal. Pada mode tombol, rekap absensi dan rekonsiliasi kode
+   TPS bersama saksi dulu, lalu publikasikan hasil.
 2. Buka halaman **Hasil**. Periksa bersama saksi:
    - perolehan suara setiap calon;
    - tanda ✓ bahwa jumlah surat suara sama dengan jumlah pemilih yang sudah memilih;
    - daftar NIM yang masuk dengan kode pengecualian (jika ada).
-3. Di **Admin → Ringkasan**, tekan **Buka audit suara**. Lalu unduh **daftar surat suara (CSV)** dan catat **SHA-256** yang tampil. Lampirkan keduanya pada berita
-   acara.
+3. **Segera, sebelum kegiatan lain:** di **Admin → Ringkasan**, tekan **Buka audit suara**, lalu unduh
+   **daftar surat suara (CSV)**. Bacakan dan foto **SHA-256** yang tampil **di depan saksi**, lalu tulis di
+   berita acara. Sidik jari ini membuktikan bahwa daftar surat suara tidak berubah setelah ditutup, termasuk
+   oleh pemegang akses database. Lampirkan CSV dan SHA-256 pada berita acara.
 4. Umumkan hasil, tautan halaman Hasil, dan SHA-256. Buka **masa sanggah hasil**: pemilih dapat memeriksa
    kode tanda terimanya di halaman Hasil.
 

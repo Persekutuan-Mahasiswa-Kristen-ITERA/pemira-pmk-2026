@@ -3,22 +3,29 @@ import { candidatePhotos } from '#lib/server/candidates.js';
 import { getElectionStatus } from '#lib/server/election.js';
 import {
 	getParticipation,
+	getResultsRelease,
 	getTally,
 	isAuditPublic,
-	publishedBallots
+	publishedBallots,
+	resultsVisible
 } from '#lib/server/results.js';
 import { usedExceptionNims } from '#lib/server/tps.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
 	const db = getDb();
-	const [election, participation] = await Promise.all([
+	const [election, participation, release] = await Promise.all([
 		getElectionStatus(db),
-		getParticipation(db)
+		getParticipation(db),
+		getResultsRelease(db)
 	]);
 
-	// Hasil dan daftar surat suara hanya dibuka setelah pemungutan suara ditutup.
-	if (election.phase !== 'closed') return { election, participation, results: null };
+	// Hasil dan daftar surat suara hanya dibuka setelah pemungutan suara ditutup, dan pada mode
+	// tombol baru setelah dipublikasikan (migrations/0008_publikasi_hasil.sql).
+	const awaitingPublish = election.phase === 'closed' && !resultsVisible(election.phase, release);
+	if (!resultsVisible(election.phase, release)) {
+		return { election, participation, awaitingPublish, results: null };
+	}
 
 	// Pencarian kode dan daftar surat suara (CSV + SHA-256) hanya dikirim bila admin sudah
 	// membuka audit suara ke publik; sebelum itu, kode tidak pernah meninggalkan server.
@@ -40,6 +47,7 @@ export const load: PageServerLoad = async () => {
 	return {
 		election,
 		participation,
+		awaitingPublish,
 		results: {
 			tally,
 			audit: published ? { ballots: published.ballots, sha256: published.sha256 } : null,

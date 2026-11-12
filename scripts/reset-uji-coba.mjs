@@ -22,7 +22,14 @@ const TARGETS = {
 	production: { db: 'pemira-db', flags: ['--remote'], remote: true }
 };
 
-const ELECTION_TABLES = ['ballots', 'voted', 'vote_passes', 'booth_codes', 'exception_codes'];
+const ELECTION_TABLES = [
+	'ballots',
+	'voted',
+	'vote_passes',
+	'booth_codes',
+	'exception_codes',
+	'results_approvals'
+];
 const KEPT_TABLES = ['candidates', 'candidate_photos', 'voters', 'admins', 'officers'];
 
 const name = process.argv[2];
@@ -83,7 +90,8 @@ if (before.public_test !== 1) {
 
 console.log(
 	'\nAkan DIHAPUS : surat suara, tanda sudah memilih, izin memilih, kode TPS, kode pengecualian,' +
-		'\n               audit log (diarsipkan dulu); jadwal dikosongkan; pita uji coba dimatikan.' +
+		'\n               persetujuan publikasi hasil, audit log (diarsipkan dulu); jadwal dikosongkan;' +
+		'\n               pita uji coba dimatikan. Mode publikasi hasil tidak diubah.' +
 		'\nDIPERTAHANKAN: calon, foto, visi-misi, DPT, admin, Petugas TPS, judul pemilihan.'
 );
 const rl = createInterface({ input: stdin, output: stdout });

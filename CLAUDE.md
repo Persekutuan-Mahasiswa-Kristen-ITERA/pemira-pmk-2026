@@ -52,9 +52,13 @@ dokumen untuk membenarkan kode, atau sebaliknya, tanpa persetujuan.
 6. **Izin memilih.** Kode TPS: sekali pakai, 2 menit, tidak terkait NIM. Kode pengecualian: terikat NIM,
    5 menit, sekali pakai; disetujui **dua admin berbeda**, atau dibuat **super admin sendiri** (`solo = 1`,
    migrasi 0007, ditandai di daftar dan audit log). Kode dan token izin hanya disimpan sebagai SHA-256.
-7. **Hasil.** Sebelum ditutup, publik hanya melihat angka partisipasi. Begitu fase `closed`, perolehan suara
-   per calon **langsung publik tanpa persetujuan**. Pencarian kode dan CSV surat suara + SHA-256 baru
-   tampil setelah seorang admin membuka audit suara (`audit_public`, tercatat di audit log).
+7. **Hasil.** Sebelum ditutup, publik hanya melihat angka partisipasi. Setelah fase `closed`, perolehan suara
+   per calon tampil menurut `election_config.results_mode` (migrasi 0008): `auto` = langsung publik;
+   `manual` = tidak dikirim kepada siapa pun (termasuk admin) sampai dipublikasikan oleh **dua admin
+   berbeda** atau **super admin sendiri** (`results_approvals`, permanen). Super admin boleh mengubah mode
+   kapan saja. Semua jalur hasil memakai `resultsVisible` (`results.ts`). Pencarian kode dan CSV surat
+   suara + SHA-256 baru tampil bila hasil sudah tampil DAN seorang admin membuka audit suara
+   (`audit_public`). Semua perubahan tercatat di audit log.
 8. **Data pribadi dan secret** tidak boleh masuk repo: DPT, `data/`, `*.csv`, `*.xlsx`, `.dev.vars`,
    `NOTES.local.md` di-ignore. Tes dan fixture hanya memakai data fiktif.
 
@@ -66,7 +70,7 @@ pemilihan, dan secara teknis bisa melepas trigger.
 
 ## Status saat ini (per 12 November 2026)
 
-- Production berjalan di tag `v1.0.1-uji` dalam **mode uji coba publik** (`election_config.public_test = 1`):
+- Production berjalan di tag `v1.0.2-uji` dalam **mode uji coba publik** (`election_config.public_test = 1`):
   setiap halaman berpita "Uji coba publik".
 - **Rabu, 18 November 2026 pukul 20.00 WIB:** `pnpm db:reset:uji-coba production`. Skrip ini menghapus data
   pemilihan uji, mematikan pita, dan memverifikasi hasilnya; calon, foto, DPT, admin, dan Petugas TPS

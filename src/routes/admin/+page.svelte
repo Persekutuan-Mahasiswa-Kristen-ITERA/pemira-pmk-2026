@@ -10,6 +10,8 @@
 	let p = $derived(data.participation);
 	let locked = $derived(election.phase === 'open' || election.phase === 'closed');
 	let percent = $derived(p.eligible ? Math.round((p.voted / p.eligible) * 1000) / 10 : 0);
+	let release = $derived(data.release);
+	let iApproved = $derived(release.approvals.some((a) => a.email === data.adminEmail));
 
 	const PHASE_LABEL = {
 		unscheduled: 'Belum dijadwalkan',
@@ -126,6 +128,80 @@
 	{/if}
 </form>
 
+<h2>Publikasi hasil</h2>
+<div class="panel">
+	{#if data.isSuperAdmin}
+		<form method="POST" action="?/resultsMode" use:enhance class="mode-form">
+			<fieldset>
+				<legend>Saat pemungutan suara ditutup</legend>
+				<label class="choice">
+					<input type="radio" name="mode" value="auto" checked={release.mode === 'auto'} />
+					<span>
+						<strong>Tampil otomatis.</strong> Perolehan suara langsung tampil di halaman Hasil.
+					</span>
+				</label>
+				<label class="choice">
+					<input type="radio" name="mode" value="manual" checked={release.mode === 'manual'} />
+					<span>
+						<strong>Tunggu tombol Publikasikan.</strong> Perolehan suara tidak tampil kepada siapa pun,
+						termasuk admin, sampai dua admin menyetujui atau super admin mempublikasikan.
+					</span>
+				</label>
+			</fieldset>
+			<button class="button button-ghost" type="submit">Simpan mode (super admin)</button>
+		</form>
+	{:else}
+		<p>
+			Mode: <strong
+				>{release.mode === 'auto'
+					? 'tampil otomatis saat ditutup'
+					: 'tunggu tombol Publikasikan'}</strong
+			>. Hanya super admin yang bisa mengubahnya.
+		</p>
+	{/if}
+
+	{#if release.mode === 'manual'}
+		<div class="publish">
+			{#if release.published}
+				<p class="msg-ok">Hasil sudah dipublikasikan dan tampil di halaman Hasil.</p>
+			{:else if election.phase !== 'closed'}
+				<p class="hint">Tombol Publikasikan muncul setelah pemungutan suara ditutup.</p>
+			{:else}
+				<p>
+					Pemungutan suara sudah ditutup. Hasil belum tampil. Butuh persetujuan <strong
+						>dua admin berbeda</strong
+					>, atau satu super admin.
+				</p>
+				<form method="POST" action="?/publish" use:enhance>
+					<button class="button" type="submit" disabled={iApproved}>
+						{#if iApproved}
+							Anda sudah menyetujui
+						{:else if data.isSuperAdmin}
+							Publikasikan hasil sekarang (super admin)
+						{:else}
+							Setujui publikasi hasil
+						{/if}
+					</button>
+				</form>
+			{/if}
+			{#if release.approvals.length}
+				<p class="hint">Disetujui oleh:</p>
+				<ul class="approvals">
+					{#each release.approvals as a (a.email)}
+						<li>
+							{a.email}, {formatWib(a.approvedAt)}{#if a.solo}
+								<span class="tag">super admin, langsung</span>{/if}
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</div>
+	{/if}
+	<p class="hint">
+		Perubahan mode dan setiap persetujuan tercatat di audit log. Persetujuan tidak bisa dibatalkan.
+	</p>
+</div>
+
 <h2>Audit suara publik</h2>
 <form method="POST" action="?/audit" use:enhance class="panel audit-panel">
 	<input type="hidden" name="enabled" value={data.auditPublic ? '0' : '1'} />
@@ -146,10 +222,9 @@
 	</div>
 	<p class="hint">
 		Mengatur bagian <strong>Periksa suaramu</strong> dan <strong>Audit mandiri</strong> (pencarian
-		kode tanda terima, unduhan CSV surat suara, SHA-256) di halaman Hasil. Perolehan suara tetap
-		tampil begitu pemungutan suara ditutup; bagian audit hanya tampil jika dibuka di sini
-		{#if election.phase !== 'closed'}dan baru berlaku setelah pemungutan suara ditutup{/if}.
-		Perubahan tercatat di audit log.
+		kode tanda terima, unduhan CSV surat suara, SHA-256) di halaman Hasil. Bagian audit hanya tampil
+		jika dibuka di sini, dan baru berlaku setelah perolehan suara tampil (lihat
+		<strong>Publikasi hasil</strong>). Perubahan tercatat di audit log.
 	</p>
 </form>
 
@@ -173,6 +248,54 @@
 {/if}
 
 <style>
+	.mode-form fieldset {
+		margin: 0;
+		padding: 0;
+		border: 0;
+		display: grid;
+		gap: 10px;
+	}
+
+	.mode-form legend {
+		margin-bottom: 8px;
+		font-weight: 800;
+	}
+
+	.choice {
+		display: flex;
+		gap: 10px;
+		align-items: flex-start;
+	}
+
+	.choice input {
+		margin-top: 4px;
+	}
+
+	.mode-form .button {
+		margin-top: 14px;
+	}
+
+	.publish {
+		margin-top: 18px;
+		padding-top: 18px;
+		border-top: 1px solid var(--line);
+		display: grid;
+		gap: 10px;
+	}
+
+	.approvals {
+		margin: 0;
+		padding-left: 20px;
+		overflow-wrap: anywhere;
+	}
+
+	.tag {
+		margin-left: 6px;
+		font-size: 13px;
+		font-weight: 800;
+		color: var(--brown);
+	}
+
 	.audit-row {
 		display: flex;
 		align-items: center;

@@ -387,3 +387,99 @@ describe('migrasi 0005 (audit suara publik)', () => {
 		);
 	});
 });
+
+describe('migrasi 0008 (publikasi hasil)', () => {
+	it('berjalan saat uji coba sedang berlangsung tanpa menyentuh suara, mode tetap otomatis', () => {
+		const migration = (name: string) =>
+			readFileSync(join(process.cwd(), 'migrations', name), 'utf8');
+		const old = new DatabaseSync(':memory:');
+		old.exec('PRAGMA foreign_keys = ON;');
+		for (const file of [
+			'0001_init.sql',
+			'0002_voters_by_nim.sql',
+			'0003_admins_and_photos.sql',
+			'0004_tps.sql',
+			'0005_audit_publik.sql',
+			'0006_uji_coba_publik.sql',
+			'0007_super_admin_kode.sql'
+		]) {
+			old.exec(migration(file));
+		}
+		old.exec(`INSERT INTO candidates (id, number, name) VALUES (1, 1, 'Satu')`);
+		old.exec(`INSERT INTO voters (nim, name) VALUES ('${ALICE}', 'Alice')`);
+		setSchedule(old, now() - 60, now() + 3600);
+		castVote(old, ALICE, 'AAAA-BBBB', 1);
+
+		old.exec(migration('0008_publikasi_hasil.sql'));
+
+		expect(count(old, 'ballots')).toBe(1);
+		expect(count(old, 'voted')).toBe(1);
+		expect(old.prepare('SELECT results_mode FROM election_config').get()).toEqual({
+			results_mode: 'auto'
+		});
+	});
+
+	const approve = (email: string, solo = 0) =>
+		db.prepare('INSERT INTO results_approvals (admin_email, solo) VALUES (?, ?)').run(email, solo);
+	const close = () => setSchedule(db, now() - 3600, now() - 1);
+
+	it('mode bawaan otomatis dan hanya menerima auto atau manual', () => {
+		expect(db.prepare('SELECT results_mode FROM election_config').get()).toEqual({
+			results_mode: 'auto'
+		});
+		expect(() => db.prepare("UPDATE election_config SET results_mode = 'x'").run()).toThrow(
+			/CHECK/
+		);
+	});
+
+	it('mode boleh diubah kapan saja, termasuk saat berlangsung dan setelah ditutup', () => {
+		setSchedule(db, now() - 60, now() + 3600);
+		db.prepare("UPDATE election_config SET results_mode = 'manual'").run();
+		db.prepare('UPDATE election_config SET closes_at = unixepoch()').run(); // tutup darurat
+		db.prepare("UPDATE election_config SET results_mode = 'auto'").run();
+		expect(db.prepare('SELECT results_mode FROM election_config').get()).toEqual({
+			results_mode: 'auto'
+		});
+	});
+
+	it('persetujuan ditolak sebelum dijadwalkan dan selama pemungutan suara berlangsung', () => {
+		expect(() => approve('a@x.id')).toThrow(/voting_not_closed/);
+		setSchedule(db, now() + 3600, now() + 7200);
+		expect(() => approve('a@x.id')).toThrow(/voting_not_closed/);
+		setSchedule(db, now() - 60, now() + 3600);
+		expect(() => approve('a@x.id')).toThrow(/voting_not_closed/);
+		expect(count(db, 'results_approvals')).toBe(0);
+	});
+
+	it('setelah ditutup: satu persetujuan per admin, permanen', () => {
+		close();
+		approve('a@x.id');
+		approve('b@x.id');
+		expect(count(db, 'results_approvals')).toBe(2);
+		expect(() => approve('a@x.id')).toThrow(/results_approvals_immutable/);
+		expect(() =>
+			db
+				.prepare(
+					"INSERT OR REPLACE INTO results_approvals (admin_email, solo) VALUES ('a@x.id', 1)"
+				)
+				.run()
+		).toThrow(/results_approvals_immutable/);
+		expect(() => db.prepare('UPDATE results_approvals SET solo = 1').run()).toThrow(
+			/results_approvals_immutable/
+		);
+		expect(() => db.prepare('DELETE FROM results_approvals').run()).toThrow(
+			/results_approvals_immutable/
+		);
+		expect(
+			db.prepare('SELECT admin_email, solo FROM results_approvals ORDER BY admin_email').all()
+		).toEqual([
+			{ admin_email: 'a@x.id', solo: 0 },
+			{ admin_email: 'b@x.id', solo: 0 }
+		]);
+	});
+
+	it('penanda solo hanya 0 atau 1', () => {
+		close();
+		expect(() => approve('a@x.id', 2)).toThrow(/CHECK/);
+	});
+});

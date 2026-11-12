@@ -55,7 +55,7 @@ sequenceDiagram
     P->>S: Pilih calon + konfirmasi
     S->>DB: Satu transaksi: catat "sudah memilih" (NIM)<br/>+ surat suara (kode acak → calon), tanpa penghubung,<br/>+ hapus izin memilih
     S-->>P: Kode tanda terima, mis. 7KQ2M-X9D4P (hanya sekali), keluar otomatis 20 detik
-    Note over S,DB: Setelah ditutup
+    Note over S,DB: Setelah ditutup (mode tombol: setelah dipublikasikan)
     S-->>P: Perolehan suara per calon
     Note over S,DB: Setelah panitia membuka audit suara
     S-->>P: Daftar semua kode → calon (CSV + SHA-256)
@@ -81,19 +81,22 @@ hanya didapat dengan salah satu cara berikut, dan keduanya diatur di
 
 ## 👥 Siapa bisa apa
 
-| Peran                                  | Bisa                                                                                                                                               | Tidak bisa                                                                                                                        |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| **Publik**                             | Melihat calon, jadwal, dan angka partisipasi. Setelah ditutup: hasil; setelah audit suara dibuka: daftar surat suara dan cek kode.                 | Melihat hasil sebelum pemungutan suara ditutup.                                                                                   |
-| **Pemilih** (NIM terdaftar di DPT)     | Memilih satu kali di TPS dan menerima kode tanda terima.                                                                                           | Memilih dari luar TPS, memilih dua kali, atau mengubah pilihan.                                                                   |
-| **Petugas TPS** (diundang super admin) | Membuat kode TPS sekali pakai dan mengecek apakah NIM ada di DPT.                                                                                  | Membuka panel admin, melihat siapa yang sudah memilih, membuat kode yang terikat ke NIM.                                          |
-| **Admin** (diundang super admin)       | Mengatur jadwal, calon dan foto, serta DPT sebelum dibuka; kode pengecualian (dua admin); tutup darurat; audit log.                                | Melihat pilihan siapa pun, melihat daftar siapa yang sudah atau belum memilih (lihat _Batasan_), mengubah suara, membuka kembali. |
-| **Super admin** (`SUPER_ADMIN_EMAILS`) | Semua yang bisa dilakukan admin dan Petugas TPS, mengundang dan mencabut admin serta Petugas TPS, dan membuat kode pengecualian tanpa admin kedua. | Sama dengan admin.                                                                                                                |
+| Peran                                  | Bisa                                                                                                                                                                                                                      | Tidak bisa                                                                                                                        |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Publik**                             | Melihat calon, jadwal, dan angka partisipasi. Setelah ditutup: hasil (langsung, atau setelah dipublikasikan bila memakai mode tombol); setelah audit suara dibuka: daftar surat suara dan cek kode.                       | Melihat hasil sebelum pemungutan suara ditutup.                                                                                   |
+| **Pemilih** (NIM terdaftar di DPT)     | Memilih satu kali di TPS dan menerima kode tanda terima.                                                                                                                                                                  | Memilih dari luar TPS, memilih dua kali, atau mengubah pilihan.                                                                   |
+| **Petugas TPS** (diundang super admin) | Membuat kode TPS sekali pakai dan mengecek apakah NIM ada di DPT.                                                                                                                                                         | Membuka panel admin, melihat siapa yang sudah memilih, membuat kode yang terikat ke NIM.                                          |
+| **Admin** (diundang super admin)       | Mengatur jadwal, calon dan foto, serta DPT sebelum dibuka; kode pengecualian (dua admin); tutup darurat; menyetujui publikasi hasil (dua admin); audit log.                                                               | Melihat pilihan siapa pun, melihat daftar siapa yang sudah atau belum memilih (lihat _Batasan_), mengubah suara, membuka kembali. |
+| **Super admin** (`SUPER_ADMIN_EMAILS`) | Semua yang bisa dilakukan admin dan Petugas TPS, mengundang dan mencabut admin serta Petugas TPS, membuat kode pengecualian tanpa admin kedua, memilih mode publikasi hasil, dan mempublikasikan hasil tanpa admin kedua. | Sama dengan admin.                                                                                                                |
 
 Semua tindakan admin tercatat di audit log yang tidak bisa diubah atau dihapus.
 
 ## 🔍 Verifikasi hasil
 
-Setelah pemungutan suara ditutup, halaman `/hasil` menampilkan perolehan suara. Begitu panitia membuka
+Setelah pemungutan suara ditutup, halaman `/hasil` menampilkan perolehan suara. Super admin bisa memilih
+**mode tombol** ([`migrations/0008_publikasi_hasil.sql`](migrations/0008_publikasi_hasil.sql)): perolehan suara
+baru tampil, kepada siapa pun termasuk admin, setelah dua admin berbeda menekan **Publikasikan hasil** atau
+super admin mempublikasikannya sendiri. Publikasi tercatat di audit log dan tidak bisa dibatalkan. Begitu panitia membuka
 **audit suara** dari panel admin (satu tombol, tercatat di audit log), halaman itu juga menampilkan pencarian kode tanda terima
 dan berkas CSV berisi semua surat suara (`kode,nomor_calon`) beserta hash SHA-256-nya. Pemilih tidak wajib
 memeriksa apa pun; langkah berikut disediakan untuk saat ada sengketa hasil. Siapa pun bisa:
@@ -143,6 +146,10 @@ Kami mencantumkan batasan sistem secara terbuka:
   pemilihan bisa mencocokkan keduanya dari waktu masuknya. Karena itu akses langsung dibatasi pada orang
   tersebut, perintah ke database selama pemilihan hanya dijalankan dalam keadaan darurat dan disaksikan, dan
   log aktivitas Cloudflare dilampirkan pada berita acara.
+- **Publikasi hasil bisa ditahan.** Pada mode tombol, hasil tidak tampil sampai dua admin menyetujui atau
+  super admin mempublikasikannya. Super admin bisa mengubah mode kapan saja, termasuk setelah ditutup, dan
+  bisa mempublikasikan sendiri. Mode yang dipakai diumumkan sebelum pemilihan, dan setiap perubahan mode
+  serta persetujuan tercatat di audit log.
 - **Trigger bisa dilepas oleh pemegang akses database.** Aturan "tidak bisa diubah/dihapus" ditegakkan
   trigger, dan pemegang akses langsung D1 secara teknis bisa melepasnya (seperti yang dilakukan skrip reset
   uji coba publik secara terbuka). Penjaganya: kode tanda terima yang bisa dicek setiap pemilih, CSV surat
