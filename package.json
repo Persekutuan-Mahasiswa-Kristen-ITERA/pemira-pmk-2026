@@ -25,6 +25,7 @@
 		"db:seed:demo": "wrangler d1 execute pemira-db --local --file scripts/seed-demo.sql",
 		"db:seed:panitia:local": "wrangler d1 execute pemira-db --local --file scripts/seed-dev-panitia.sql",
 		"db:demo:local": "wrangler d1 execute pemira-db --local --file scripts/drop-all.sql && wrangler d1 migrations apply pemira-db --local && pnpm db:seed:panitia:local && wrangler d1 execute pemira-db --local --file scripts/seed-dev-simulasi.sql",
+		"db:reset:uji-coba": "node scripts/reset-uji-coba.mjs",
 		"db:reset:staging": "wrangler d1 execute pemira-db-staging --env preview --remote --file scripts/drop-all.sql && wrangler d1 migrations apply pemira-db-staging --env preview --remote",
 		"deploy:staging": "pnpm build && wrangler pages deploy --branch staging"
 	},

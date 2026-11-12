@@ -102,6 +102,26 @@ lainnya, foto terkunci begitu pemilihan dibuka, jadi pastikan sudah final sebelu
 5. Uji juga **tutup darurat** di staging, supaya panitia tahu caranya.
 6. **(developer)** Kosongkan lagi database staging setelah simulasi.
 
+### 2a. Uji coba publik di situs resmi (Pemira 2027: sampai Rabu, 18 November 2026 pukul 20.00 WIB)
+
+Selama mode uji coba publik menyala, situs resmi menampilkan pita **"Uji coba publik"** di setiap halaman,
+dan footer menulis _mode uji coba publik_. Suara yang masuk selama uji tidak dihitung.
+
+1. **Sebelum uji dibuka**, impor **DPT final** dan rapikan calon (profil, visi-misi, foto). Begitu jadwal uji
+   dibuka, DPT dan calon terkunci sampai reset. DPT **tidak** dihapus saat reset, jadi sidik jari DPT yang
+   diumumkan tetap berlaku untuk hari-H.
+2. **(developer)** Nyalakan mode uji coba publik:
+   `pnpm wrangler d1 execute pemira-db --remote --file scripts/uji-coba-publik-on.sql`.
+3. Atur jadwal uji di **Admin → Ringkasan & jadwal**, lalu publik boleh mencoba alur lengkap.
+4. **(developer) Rabu, 18 November 2026 pukul 20.00 WIB:** `pnpm db:reset:uji-coba production`. Skrip
+   mencatat bookmark Time Travel, mengarsipkan audit log ke `data/`, menghapus surat suara, tanda sudah
+   memilih, kode TPS, kode pengecualian, izin memilih, dan audit log, mengosongkan jadwal, mematikan pita, lalu
+   memverifikasi hasilnya. Calon, foto, DPT, admin, dan Petugas TPS tetap. Skrip menolak berjalan bila pita
+   sudah mati, jadi tidak mungkin terjalankan saat pemilihan resmi. Latih dulu di staging (lihat komentar di
+   `scripts/reset-uji-coba.mjs`).
+5. Setelah reset: pastikan pita hilang dan Admin → Ringkasan menunjukkan 0 surat suara, atur **jadwal resmi**,
+   lalu minta calon memeriksa ulang halaman beranda.
+
 ### 3. Rilis versi final **(developer)**
 
 1. Buat tag rilis, mis. `v1.0.0`, lalu push. GitHub Actions akan men-deploy ke production.
