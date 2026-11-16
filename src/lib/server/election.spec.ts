@@ -42,7 +42,7 @@ describe('scheduleError', () => {
 	});
 
 	it('menolak waktu buka yang sudah lewat (salah ketik tanggal)', () => {
-		// Rabu malam: tanggal 18 alih-alih 19, 07.00 dan 18.00 sudah lewat.
+		// Minggu malam: tanggal 22 alih-alih 23, 07.00 dan 18.00 sudah lewat.
 		expect(scheduleError(now - 13 * hour, now - 2 * hour, now)).toMatch(/masa depan/);
 		// Hanya waktu buka yang lampau: pemilihan akan langsung terbuka dan terkunci.
 		expect(scheduleError(now - 60, now + 10 * hour, now)).toMatch(/masa depan/);

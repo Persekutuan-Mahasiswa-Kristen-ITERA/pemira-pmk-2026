@@ -2,7 +2,7 @@
 
 E-voting Pemilihan Ketua PMK ITERA periode 2027. Repo ini **publik** supaya bisa diaudit.
 
-- **Hari pemilihan:** Kamis, 19 November 2026, satu hari, **wajib di TPS**. Jam buka/tutup diatur panitia di
+- **Hari pemilihan:** Senin, 23 November 2026, satu hari, **wajib di TPS**. Jam buka/tutup diatur panitia di
   Admin → Ringkasan & jadwal (rencana 07.00–18.00 WIB).
 - **Pemilih:** DPT 4.495 NIM (mahasiswa Protestan aktif), sudah diimpor ke production. Pemilih login Google
   di **HP sendiri**; petugas mengetik kode TPS di HP itu. Laptop TPS (jendela incognito per pemilih) hanya
@@ -71,11 +71,13 @@ apakah sudah memilih (lewat pengajuan kode pengecualian); pemegang akses langsun
 bisa melihat siapa yang sudah memilih, bisa mencocokkan NIM dengan pilihan bila memantau database selama
 pemilihan, dan secara teknis bisa melepas trigger.
 
-## Status saat ini (per 12 November 2026)
+## Status saat ini (per 16 November 2026)
 
-- Production berjalan di tag `v1.0.2-uji` dalam **mode uji coba publik** (`election_config.public_test = 1`):
+- Jadwal (diubah panitia 16 Nov): hearing & debat Kamis 19 Nov, masa tenang Jumat–Minggu 20–22 Nov,
+  pemungutan suara Senin 23 Nov, pengumuman hasil Selasa 24 Nov (`src/lib/timeline.ts`).
+- Production berjalan di tag `v1.3.0-uji` dalam **mode uji coba publik** (`election_config.public_test = 1`):
   setiap halaman berpita "Uji coba publik".
-- **Rabu, 18 November 2026 pukul 20.00 WIB:** `pnpm db:reset:uji-coba production`. Skrip ini menghapus data
+- **Minggu, 22 November 2026 pukul 20.00 WIB:** `pnpm db:reset:uji-coba production`. Skrip ini menghapus data
   pemilihan uji, mematikan pita, dan memverifikasi hasilnya; calon, foto, DPT, admin, dan Petugas TPS
   tetap. Skrip menolak berjalan bila flag sudah mati. Setelah reset: jadwal resmi, lalu **bekukan kode**
   (tidak ada deploy sampai rekap selesai, kecuali darurat dan disaksikan).

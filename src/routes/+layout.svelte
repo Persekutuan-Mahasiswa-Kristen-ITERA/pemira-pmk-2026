@@ -16,7 +16,7 @@
 
 	const PRODUCTION_URL = 'https://pemira.pmkitera.web.id';
 	// Jadwal reset uji coba publik (scripts/reset-uji-coba.sql). Hari pemilihan resmi: #lib/timeline.
-	const PUBLIC_TEST_RESET = 'Rabu, 18 November 2026 pukul 20.00 WIB';
+	const PUBLIC_TEST_RESET = 'Minggu, 22 November 2026 pukul 20.00 WIB';
 	const ENV_LABEL = {
 		production: 'Resmi (production)',
 		staging: 'Uji coba (staging)',

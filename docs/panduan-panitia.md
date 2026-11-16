@@ -111,7 +111,7 @@ lainnya, foto terkunci begitu pemilihan dibuka, jadi pastikan sudah final sebelu
 5. Uji juga **tutup darurat** di staging, supaya panitia tahu caranya.
 6. **(developer)** Kosongkan lagi database staging setelah simulasi.
 
-### 2a. Uji coba publik di situs resmi (Pemira 2027: sampai Rabu, 18 November 2026 pukul 20.00 WIB)
+### 2a. Uji coba publik di situs resmi (Pemira 2027: sampai Minggu, 22 November 2026 pukul 20.00 WIB)
 
 Selama mode uji coba publik menyala, situs resmi menampilkan pita **"Uji coba publik"** di setiap halaman,
 dan footer menulis _mode uji coba publik_. Suara yang masuk selama uji tidak dihitung.
@@ -122,7 +122,7 @@ dan footer menulis _mode uji coba publik_. Suara yang masuk selama uji tidak dih
 2. **(developer)** Nyalakan mode uji coba publik:
    `pnpm wrangler d1 execute pemira-db --remote --file scripts/uji-coba-publik-on.sql`.
 3. Atur jadwal uji di **Admin → Ringkasan & jadwal**, lalu publik boleh mencoba alur lengkap.
-4. **(developer) Rabu, 18 November 2026 pukul 20.00 WIB:** `pnpm db:reset:uji-coba production`. Skrip
+4. **(developer) Minggu, 22 November 2026 pukul 20.00 WIB:** `pnpm db:reset:uji-coba production`. Skrip
    mencatat bookmark Time Travel, mengarsipkan audit log ke `data/`, menghapus surat suara, tanda sudah
    memilih, kode TPS, kode pengecualian, izin memilih, persetujuan publikasi hasil, dan audit log, mengosongkan jadwal, mematikan pita, lalu
    memverifikasi hasilnya. Calon, foto, DPT, admin, dan Petugas TPS tetap. Skrip menolak berjalan bila pita
