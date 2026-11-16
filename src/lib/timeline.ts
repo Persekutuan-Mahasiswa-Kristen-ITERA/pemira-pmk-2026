@@ -1,9 +1,9 @@
 /**
  * Linimasa Pemira yang ditampilkan di beranda (#timeline).
  *
- * Sumber: balasan persiapan panitia (13 November 2026). Ini hanya informasi; jam buka/tutup yang
+ * Sumber: balasan persiapan panitia (13 November 2026), jadwal diperbarui panitia 16 November 2026. Ini hanya informasi; jam buka/tutup yang
  * BERLAKU untuk pemungutan suara tetap `election_config` di database (Admin → Ringkasan & jadwal).
- * Mengubah daftar ini butuh deploy, jadi perbarui sebelum kode dibekukan (18 November 2026).
+ * Mengubah daftar ini butuh deploy, jadi perbarui sebelum kode dibekukan (22 November 2026).
  */
 
 export interface TimelineEvent {
@@ -19,7 +19,7 @@ export interface TimelineEvent {
 	note?: string;
 }
 
-export const VOTING_DAY = 'Kamis, 19 November 2026';
+export const VOTING_DAY = 'Senin, 23 November 2026';
 export const VOTING_HOURS = '09.00–18.00 WIB';
 
 export const TIMELINE: readonly TimelineEvent[] = [
@@ -55,18 +55,25 @@ export const TIMELINE: readonly TimelineEvent[] = [
 		place: 'Labtek 2 lantai 2, Ruang Seminar Arsitektur'
 	},
 	{
-		id: 'hearing',
-		title: 'Hearing calon',
-		start: '2026-11-16',
-		end: '2026-11-16',
-		date: 'Senin, 16 November 2026',
-		note: 'Jam dan tempat diumumkan panitia paling lambat 14 November 2026.'
+		id: 'hearing-debat',
+		title: 'Hearing dan debat calon',
+		start: '2026-11-19',
+		end: '2026-11-19',
+		date: 'Kamis, 19 November 2026',
+		note: 'Jam dan tempat diumumkan panitia.'
+	},
+	{
+		id: 'masa-tenang',
+		title: 'Masa tenang',
+		start: '2026-11-20',
+		end: '2026-11-22',
+		date: 'Jumat–Minggu, 20–22 November 2026'
 	},
 	{
 		id: 'pemungutan-suara',
 		title: 'Pemungutan suara',
-		start: '2026-11-19',
-		end: '2026-11-19',
+		start: '2026-11-23',
+		end: '2026-11-23',
 		date: VOTING_DAY,
 		time: VOTING_HOURS,
 		place: 'TPS (lokasi diumumkan panitia)',
@@ -75,9 +82,9 @@ export const TIMELINE: readonly TimelineEvent[] = [
 	{
 		id: 'pengumuman',
 		title: 'Pengumuman hasil',
-		start: '2026-11-20',
-		end: '2026-11-20',
-		date: 'Jumat, 20 November 2026',
+		start: '2026-11-24',
+		end: '2026-11-24',
+		date: 'Selasa, 24 November 2026',
 		place: 'Instagram PMK ITERA'
 	}
 ];

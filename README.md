@@ -125,7 +125,7 @@ bisa memeriksa kode tanda terimanya satu per satu.
 > memakai database terpisah dan selalu ditandai pita kuning bertuliskan **"Situs uji coba"**; footer setiap
 > situs menyebut database yang dipakai.
 >
-> Sampai **Rabu, 18 November 2026 pukul 20.00 WIB**, situs resmi juga dipakai untuk **uji coba publik** dan
+> Sampai **Minggu, 22 November 2026 pukul 20.00 WIB**, situs resmi juga dipakai untuk **uji coba publik** dan
 > ditandai pita **"Uji coba publik"**. Suara selama masa itu tidak dihitung: semua data pemilihan uji (surat
 > suara, penanda sudah memilih, kode, audit log) dihapus pada waktu tersebut dengan
 > [`scripts/reset-uji-coba.sql`](scripts/reset-uji-coba.sql), yang sekaligus mematikan pita. Skrip itu

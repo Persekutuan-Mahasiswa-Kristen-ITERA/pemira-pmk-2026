@@ -37,13 +37,13 @@
 	/** Narasi video tutorial (static/video/tutorial-pemilih.mp4), untuk yang tidak bisa memutar suara. */
 	const narration = [
 		'Begini cara memilih di Pemira PMK ITERA.',
-		'Kamis, 19 November, pukul 09.00 sampai 18.00 WIB, datanglah ke TPS dengan membawa KTM dan HP.',
+		'Senin, 23 November, pukul 09.00 sampai 18.00 WIB, datanglah ke TPS dengan membawa KTM dan HP.',
 		'Di area bilik, buka situs Pemira di HP kamu, lalu masuk dengan akun Google mahasiswa ITERA.',
 		'Petugas lalu mengetik kode TPS sekali pakai di HP kamu. Kamu punya waktu lima menit untuk memilih.',
 		'Baca visi dan misi setiap calon. Coblos satu calon, lalu tekan Lanjut.',
 		'Periksa lagi pilihanmu. Suara yang sudah dikirim tidak bisa diubah.',
 		'Suaramu tercatat. Simpan kode tanda terima, karena kode ini hanya muncul sekali. Setelah itu, kamu keluar otomatis.',
-		'Pilihanmu rahasia. Hasil diumumkan Jumat, 20 November. Sampai jumpa di TPS!'
+		'Pilihanmu rahasia. Hasil diumumkan Selasa, 24 November. Sampai jumpa di TPS!'
 	];
 
 	const guarantees = [
