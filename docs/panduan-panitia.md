@@ -95,7 +95,8 @@ lainnya, foto terkunci begitu pemilihan dibuka, jadi pastikan sudah final sebelu
    harus sama dengan jadwal di sistem (langkah 6); yang berlaku adalah jadwal di sistem.
 
 > Begitu waktu buka tiba, **DPT, daftar calon (termasuk foto), dan jadwal terkunci permanen** oleh database. Pastikan
-> semuanya final sebelum itu.
+> semuanya final sebelum itu. Satu-satunya pengecualian: super admin bisa **menambah** pemilih yang terlewat
+> (lihat _Hari pemilihan_); mengubah atau menghapus pemilih tetap tidak bisa.
 
 ### 2. Simulasi (± 1 minggu sebelumnya, di situs staging)
 
@@ -147,9 +148,15 @@ dan footer menulis _mode uji coba publik_. Suara yang masuk selama uji tidak dih
     absensi. Jumlah kode dipakai boleh sedikit lebih banyak dari jumlah yang sudah memilih (pemilih yang
     waktunya habis memakai kode baru), tetapi tidak boleh lebih sedikit.
 - Ingatkan pemilih untuk **menyimpan kode tanda terima** dan **tidak memberikannya kepada siapa pun**.
-- Pemilih yang gagal login: ikuti langkah **Pemilih yang tidak bisa masuk dengan Google** di atas. Pemilih yang
-  merasa seharusnya terdaftar: catat NIM, email, dan kendalanya. DPT tidak bisa diubah lagi setelah
-  pemungutan suara dibuka.
+- Pemilih yang gagal login: ikuti langkah **Pemilih yang tidak bisa masuk dengan Google** di atas.
+- **Pemilih yang tidak ada di DPT** tetapi merasa berhak: catat NIM, nama, dan email. Panitia mengecek
+  kelayakannya di luar sistem (mahasiswa aktif dan beragama Kristen Protestan, mis. ke data kampus), bila
+  bisa disaksikan saksi. Jika memenuhi syarat, **super admin** membuka **Admin → DPT → Tambah pemilih**,
+  mengisi NIM, nama lengkap, serta alasan dan bukti pengecekan (siapa yang mengecek, ke mana). Penambahan
+  permanen (tidak bisa dibatalkan), tercatat di audit log, dan tampil di daftar _Pemilih tambahan_ untuk
+  semua admin. Pemilih itu lalu masuk dengan Google dan memilih di TPS seperti biasa (jika sebelumnya
+  ditolak, muat ulang halaman atau masuk ulang). Hanya super admin yang bisa menambah; mengubah atau
+  menghapus pemilih tetap tidak bisa, dan setelah pemungutan suara ditutup tidak ada penambahan lagi.
 - **Tutup darurat** (Admin → Ringkasan) hanya jika ada masalah serius, dengan persetujuan saksi. Alasan
   wajib diisi dan tercatat di audit log. Pemungutan suara tidak bisa dibuka kembali.
 
@@ -179,7 +186,9 @@ dan footer menulis _mode uji coba publik_. Suara yang masuk selama uji tidak dih
 2. Buka halaman **Hasil**. Periksa bersama saksi:
    - perolehan suara setiap calon;
    - tanda ✓ bahwa jumlah surat suara sama dengan jumlah pemilih yang sudah memilih;
-   - daftar NIM yang masuk dengan kode pengecualian (jika ada).
+   - daftar NIM yang masuk dengan kode pengecualian (jika ada);
+   - daftar **pemilih tambahan** (Admin → DPT) beserta alasannya, dan sidik jari DPT tanpa pemilih tambahan,
+     yang harus sama dengan angka yang diumumkan saat DPT dikunci.
 3. **Segera, sebelum kegiatan lain:** di **Admin → Ringkasan**, tekan **Buka audit suara**, lalu unduh
    **daftar surat suara (CSV)**. Bacakan dan foto **SHA-256** yang tampil **di depan saksi**, lalu tulis di
    berita acara. Sidik jari ini membuktikan bahwa daftar surat suara tidak berubah setelah ditutup, termasuk

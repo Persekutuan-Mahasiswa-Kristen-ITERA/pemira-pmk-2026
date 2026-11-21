@@ -136,3 +136,64 @@ export function dptInsertStatements(db: D1Database, voters: DptVoter[]): D1Prepa
 	}
 	return statements;
 }
+
+export interface VoterAddition {
+	nim: string;
+	name: string;
+	reason: string;
+	addedBy: string;
+	addedAt: number;
+	/** false jika NIM ini kemudian hilang karena DPT diganti lewat impor (hanya mungkin sebelum dibuka). */
+	inDpt: boolean;
+}
+
+export type AddVoterResult = { ok: true } | { ok: false; reason: 'exists' };
+
+/**
+ * Super admin menambah satu pemilih ke DPT (migrations/0010_tambah_pemilih.sql). Catatan penambahan,
+ * baris DPT, dan audit log masuk dalam satu batch: trigger hanya menerima baris DPT baru saat
+ * pemilihan dibuka jika catatan penambahannya ada. Pemanggil WAJIB sudah memanggil
+ * `requireSuperAdmin`; database tidak tahu siapa super admin.
+ */
+export async function addVoter(
+	db: D1Database,
+	input: { nim: string; name: string; reason: string; addedBy: string },
+	audit: D1PreparedStatement
+): Promise<AddVoterResult> {
+	const existing = await db.prepare('SELECT 1 FROM voters WHERE nim = ?').bind(input.nim).first();
+	if (existing) return { ok: false, reason: 'exists' };
+	await db.batch([
+		db
+			.prepare('INSERT INTO voter_additions (nim, name, reason, added_by) VALUES (?, ?, ?, ?)')
+			.bind(input.nim, input.name, input.reason, input.addedBy),
+		db.prepare('INSERT INTO voters (nim, name) VALUES (?, ?)').bind(input.nim, input.name),
+		audit
+	]);
+	return { ok: true };
+}
+
+export async function listVoterAdditions(db: D1Database): Promise<VoterAddition[]> {
+	const { results } = await db
+		.prepare(
+			`SELECT a.nim, a.name, a.reason, a.added_by, a.added_at,
+			        EXISTS (SELECT 1 FROM voters v WHERE v.nim = a.nim) AS in_dpt
+			 FROM voter_additions a
+			 ORDER BY a.id`
+		)
+		.all<{
+			nim: string;
+			name: string;
+			reason: string;
+			added_by: string;
+			added_at: number;
+			in_dpt: number;
+		}>();
+	return results.map((r) => ({
+		nim: r.nim,
+		name: r.name,
+		reason: r.reason,
+		addedBy: r.added_by,
+		addedAt: r.added_at,
+		inDpt: r.in_dpt === 1
+	}));
+}
