@@ -49,10 +49,10 @@ export const TIMELINE: readonly TimelineEvent[] = [
 		id: 'uji-panelis',
 		title: 'Uji panelis',
 		start: '2026-11-13',
-		end: '2026-11-13',
-		date: 'Jumat, 13 November 2026',
-		time: '16.30–18.30 WIB',
-		place: 'Labtek 2 lantai 2, Ruang Seminar Arsitektur'
+		end: '2026-11-14',
+		date: 'Jumat–Sabtu, 13–14 November 2026',
+		time: '13 November: 16.30–18.30 WIB',
+		place: '13 November: Labtek 2 lantai 2, Ruang Seminar Arsitektur'
 	},
 	{
 		id: 'hearing-debat',
