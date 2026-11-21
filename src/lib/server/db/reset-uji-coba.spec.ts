@@ -87,6 +87,13 @@ beforeEach(() => {
 	);
 	castVote(db, ALICE, 'AAAA-BBBB', 1);
 	castVote(db, BOB, 'CCCC-DDDD', 2);
+	// Super admin menambah pemilih saat uji dibuka (migrations/0010): tetap di DPT setelah reset.
+	db.exec('BEGIN');
+	db.prepare(
+		"INSERT INTO voter_additions (nim, name, reason, added_by) VALUES ('122140004', 'Dave', 'Dicek BAAK', 'super@x.id')"
+	).run();
+	db.prepare("INSERT INTO voters (nim, name) VALUES ('122140004', 'Dave')").run();
+	db.exec('COMMIT');
 	grantPass(db, CAROL); // izin yang belum dipakai
 	db.prepare(
 		"INSERT INTO booth_codes (code_hash, created_by, expires_at) VALUES (?, 'petugas@x.id', unixepoch() + 120)"
@@ -142,7 +149,14 @@ describe('reset uji coba publik', () => {
 	});
 
 	it('mempertahankan calon, foto, DPT, admin, dan Petugas TPS', () => {
-		const keep = ['candidates', 'candidate_photos', 'voters', 'admins', 'officers'];
+		const keep = [
+			'candidates',
+			'candidate_photos',
+			'voters',
+			'voter_additions',
+			'admins',
+			'officers'
+		];
 		const before = keep.map((t) => db.prepare(`SELECT * FROM ${t}`).all());
 		db.exec(RESET_SQL);
 		expect(keep.map((t) => db.prepare(`SELECT * FROM ${t}`).all())).toEqual(before);

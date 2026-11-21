@@ -42,9 +42,11 @@ dokumen untuk membenarkan kode, atau sebaliknya, tanpa persetujuan.
 3. **Atomik.** `INSERT voted` + `INSERT ballots` dalam satu `db.batch()` (`vote.ts`). Suara ganda ditolak
    oleh primary key `voted.nim`, termasuk request paralel.
 4. **Aturan di database.** Jendela waktu (jam D1 `unixepoch()`, bukan klien), wajib izin TPS
-   (`vote_passes`), penguncian DPT/calon/foto/jadwal saat dibuka, dan larangan ubah/hapus `ballots`,
-   `voted`, `audit_log`, `booth_codes`, `exception_codes` ditegakkan trigger. Aplikasi boleh mengecek lebih
-   awal untuk pesan ramah, tetapi jangan memindahkan aturan dari trigger ke kode.
+   (`vote_passes`), penguncian DPT/calon/foto/jadwal saat dibuka (pengecualian: super admin boleh
+   **menambah** pemilih selama belum ditutup, dicatat di `voter_additions`, migrasi 0010), dan larangan
+   ubah/hapus `ballots`, `voted`, `audit_log`, `booth_codes`, `exception_codes`, `voter_additions`
+   ditegakkan trigger. Aplikasi boleh mengecek lebih awal untuk pesan ramah, tetapi jangan memindahkan
+   aturan dari trigger ke kode.
 5. **Otorisasi eksplisit, default tolak.** Setiap load dan action memanggil `requireAdmin`,
    `requireSuperAdmin`, atau `requireOfficer` (`admin.ts`); layout saja tidak cukup. Peran dihitung ulang
    setiap request di `hooks.server.ts`. Pemilih = NIM dari email `nama.nim@student.itera.ac.id` yang sudah

@@ -30,7 +30,14 @@ const ELECTION_TABLES = [
 	'exception_codes',
 	'results_approvals'
 ];
-const KEPT_TABLES = ['candidates', 'candidate_photos', 'voters', 'admins', 'officers'];
+const KEPT_TABLES = [
+	'candidates',
+	'candidate_photos',
+	'voters',
+	'voter_additions',
+	'admins',
+	'officers'
+];
 
 const name = process.argv[2];
 const target = TARGETS[name];

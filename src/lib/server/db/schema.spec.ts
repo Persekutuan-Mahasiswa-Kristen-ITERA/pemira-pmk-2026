@@ -540,3 +540,128 @@ describe('migrasi 0009 (rincian hasil)', () => {
 		);
 	});
 });
+
+describe('migrasi 0010 (super admin menambah pemilih)', () => {
+	const recordAddition = (d: DatabaseSync, nim: string, name = 'Eve') =>
+		d
+			.prepare('INSERT INTO voter_additions (nim, name, reason, added_by) VALUES (?, ?, ?, ?)')
+			.run(nim, name, 'Dicek ke BAAK: aktif, Kristen Protestan', 'super@itera.ac.id');
+
+	/** Meniru `addVoter`: catatan penambahan dan baris DPT dalam satu transaksi. */
+	const addVoter = (d: DatabaseSync, nim: string, name = 'Eve') => {
+		d.exec('BEGIN');
+		try {
+			recordAddition(d, nim, name);
+			d.prepare('INSERT INTO voters (nim, name) VALUES (?, ?)').run(nim, name);
+			d.exec('COMMIT');
+		} catch (err) {
+			d.exec('ROLLBACK');
+			throw err;
+		}
+	};
+
+	it('berjalan di database yang sedang dipakai tanpa menyentuh suara dan DPT', () => {
+		const migration = (name: string) =>
+			readFileSync(join(process.cwd(), 'migrations', name), 'utf8');
+		const old = new DatabaseSync(':memory:');
+		old.exec('PRAGMA foreign_keys = ON;');
+		for (const file of [
+			'0001_init.sql',
+			'0002_voters_by_nim.sql',
+			'0003_admins_and_photos.sql',
+			'0004_tps.sql',
+			'0005_audit_publik.sql',
+			'0006_uji_coba_publik.sql',
+			'0007_super_admin_kode.sql',
+			'0008_publikasi_hasil.sql',
+			'0009_rincian_hasil.sql'
+		]) {
+			old.exec(migration(file));
+		}
+		old.exec(`INSERT INTO candidates (id, number, name) VALUES (1, 1, 'Satu')`);
+		old.exec(`INSERT INTO voters (nim, name) VALUES ('${ALICE}', 'Alice'), ('${BOB}', 'Bob')`);
+		setSchedule(old, now() - 60, now() + 3600);
+		castVote(old, ALICE, 'AAAA-BBBB', 1);
+
+		old.exec(migration('0010_tambah_pemilih.sql'));
+
+		expect(count(old, 'ballots')).toBe(1);
+		expect(count(old, 'voted')).toBe(1);
+		expect(count(old, 'voters')).toBe(2);
+		addVoter(old, OUTSIDER);
+		castVote(old, OUTSIDER, 'CCCC-DDDD', 1);
+		expect(count(old, 'ballots')).toBe(2);
+	});
+
+	describe('saat pemilihan berlangsung', () => {
+		beforeEach(() => setSchedule(db, now() - 60, now() + 3600));
+
+		it('menerima pemilih baru yang dicatat, lalu pemilih itu bisa memilih sekali', () => {
+			addVoter(db, OUTSIDER);
+			expect(count(db, 'voters')).toBe(3);
+			castVote(db, OUTSIDER, 'AAAA-BBBB', 1);
+			expect(() => castVote(db, OUTSIDER, 'CCCC-DDDD', 2)).toThrow(/UNIQUE|PRIMARY KEY/);
+			expect(count(db, 'ballots')).toBe(1);
+		});
+
+		it('menolak pemilih baru tanpa catatan penambahan', () => {
+			expect(() =>
+				db.prepare('INSERT INTO voters (nim, name) VALUES (?, ?)').run(OUTSIDER, 'Eve')
+			).toThrow(/voters_locked/);
+			expect(count(db, 'voters')).toBe(2);
+		});
+
+		it('membatalkan catatan jika NIM sudah ada di DPT', () => {
+			expect(() => addVoter(db, BOB)).toThrow(/UNIQUE|PRIMARY KEY/);
+			expect(count(db, 'voter_additions')).toBe(0);
+		});
+
+		it('pemilih tambahan tetap tidak bisa diubah atau dihapus dari DPT', () => {
+			addVoter(db, OUTSIDER);
+			expect(() => db.prepare('DELETE FROM voters WHERE nim = ?').run(OUTSIDER)).toThrow(
+				/voters_locked/
+			);
+			expect(() => db.prepare("UPDATE voters SET name = 'X' WHERE nim = ?").run(OUTSIDER)).toThrow(
+				/voters_locked/
+			);
+		});
+
+		it('catatan penambahan tidak bisa diubah atau dihapus', () => {
+			addVoter(db, OUTSIDER);
+			expect(() => db.exec("UPDATE voter_additions SET reason = 'lain'")).toThrow(
+				/voter_additions_immutable/
+			);
+			expect(() => db.exec('DELETE FROM voter_additions')).toThrow(/voter_additions_immutable/);
+		});
+
+		it('catatan wajib berisi NIM valid, nama, dan alasan', () => {
+			const insert = db.prepare(
+				'INSERT INTO voter_additions (nim, name, reason, added_by) VALUES (?, ?, ?, ?)'
+			);
+			expect(() => insert.run('12214000A', 'Eve', 'Dicek BAAK', 'x@y.id')).toThrow(/CHECK/);
+			expect(() => insert.run(OUTSIDER, ' ', 'Dicek BAAK', 'x@y.id')).toThrow(/CHECK/);
+			expect(() => insert.run(OUTSIDER, 'Eve', '  ', 'x@y.id')).toThrow(/CHECK/);
+		});
+	});
+
+	it('setelah tutup darurat, tidak ada penambahan', () => {
+		setSchedule(db, now() - 60, now() + 3600);
+		recordAddition(db, OUTSIDER); // catatan dibuat saat masih dibuka...
+		db.exec('UPDATE election_config SET closes_at = unixepoch()');
+		// ...tetapi baris DPT-nya tidak bisa disisipkan setelah ditutup.
+		expect(() =>
+			db.prepare('INSERT INTO voters (nim, name) VALUES (?, ?)').run(OUTSIDER, 'Eve')
+		).toThrow(/voters_locked/);
+		expect(() => addVoter(db, '122140098')).toThrow(/voting_closed/);
+		expect(count(db, 'voters')).toBe(2);
+	});
+
+	it('sebelum pemilihan dibuka, catatan boleh dibuat dan DPT tetap bebas diubah', () => {
+		setSchedule(db, now() + 3600, now() + 7200);
+		addVoter(db, OUTSIDER);
+		db.prepare('INSERT INTO voters (nim, name) VALUES (?, ?)').run('122140098', 'Frank');
+		db.prepare('DELETE FROM voters WHERE nim = ?').run(OUTSIDER);
+		expect(count(db, 'voters')).toBe(3);
+		expect(count(db, 'voter_additions')).toBe(1);
+	});
+});

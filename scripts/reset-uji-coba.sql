@@ -5,8 +5,9 @@
 -- DIHAPUS : surat suara, tanda sudah memilih, izin memilih, kode TPS, kode pengecualian,
 --           persetujuan publikasi hasil, audit log; jadwal dikosongkan (sehingga calon dan DPT bisa
 --           diubah lagi), audit publik ditutup.
--- DIPERTAHANKAN: calon (profil, visi-misi, foto), DPT, admin, Petugas TPS, judul pemilihan, mode
---           publikasi hasil (otomatis/tombol).
+-- DIPERTAHANKAN: calon (profil, visi-misi, foto), DPT (termasuk catatan pemilih tambahan,
+--           migrations/0010), admin, Petugas TPS, judul pemilihan, mode publikasi hasil
+--           (otomatis/tombol).
 --
 -- Beberapa tabel dijaga trigger "tidak boleh dihapus". Trigger itu dilepas sebentar lalu dibuat
 -- ulang dengan teks yang SAMA PERSIS dengan migrasi terakhir (diuji di reset-uji-coba.spec.ts).
