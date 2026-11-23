@@ -203,6 +203,14 @@ Tampilan memakai motif **surat suara kertas**. Pertahankan arah ini saat menamba
 - `src/hooks.server.ts` membaca tabel `admins` dan `officers` (satu query) di setiap request dari pengguna
   yang login, dan `vote_passes` jika ada cookie izin. Query ini kecil, tetapi jangan menambah query berat di
   hooks.
+- **Kuota baca D1 gratis: 5 juta baris per hari** (direset 00.00 UTC = 07.00 WIB). Setiap `count(*)`
+  membaca seluruh tabel, jadi angka partisipasi (`getParticipation`) membaca ±5.200 baris per kunjungan
+  beranda/Hasil. Pada 23 November 2026 malam, setelah hasil diumumkan, kuota habis dan situs mati (HTTP 500)
+  sampai pagi. Sejak itu, setelah fase `closed`, partisipasi, perolehan suara, dan daftar surat suara di
+  halaman publik diambil lewat `cachedWhenClosed` (`src/lib/server/closed-cache.ts`, per isolate, maks.
+  1 jam). Data itu dikunci trigger setelah ditutup (tes "data hasil beku" di `schema.spec.ts`). Gerbang
+  tampil tetap dicek setiap request. Jangan menambah query `count(*)`/daftar penuh di halaman publik tanpa
+  memikirkan kuota ini.
 - `/masuk` dan `/pilih` memakai named action (`?/google`, `?/code`, `?/unlock`, `?/vote`); SvelteKit
   melarang mencampur action `default` dengan named action.
 - Setelah suara masuk, `/pilih` memakai `applyAction` (bukan `update()`): izin, dan untuk jalur pengecualian

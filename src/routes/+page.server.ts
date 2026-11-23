@@ -1,15 +1,17 @@
 import { getDb } from '#lib/server/db.js';
 import { getElectionStatus } from '#lib/server/election.js';
 import { candidatePhotos } from '#lib/server/candidates.js';
+import { cachedWhenClosed } from '#lib/server/closed-cache.js';
 import { getParticipation, getResultsRelease, showsCounts } from '#lib/server/results.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const db = getDb();
 
-	const [election, participation, release, candidates, photos] = await Promise.all([
-		getElectionStatus(db),
-		getParticipation(db),
+	// Fase dibaca dulu: setelah ditutup, angka partisipasi diambil dari cache (closed-cache.ts).
+	const election = await getElectionStatus(db);
+	const [participation, release, candidates, photos] = await Promise.all([
+		cachedWhenClosed('participation', election, () => getParticipation(db)),
 		getResultsRelease(db),
 		db
 			.prepare('SELECT id, number, name FROM candidates ORDER BY number')

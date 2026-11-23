@@ -665,3 +665,26 @@ describe('migrasi 0010 (super admin menambah pemilih)', () => {
 		expect(count(db, 'voter_additions')).toBe(1);
 	});
 });
+
+describe('data hasil beku setelah ditutup (dasar src/lib/server/closed-cache.ts)', () => {
+	it('DPT, penanda sudah memilih, dan surat suara tidak bisa ditambah, diubah, atau dihapus', () => {
+		setSchedule(db, now() - 60, now() + 3600);
+		castVote(db, ALICE, 'AAAA-BBBB', 1);
+		db.exec('UPDATE election_config SET closes_at = unixepoch()');
+
+		const attempts: [string, RegExp][] = [
+			[`INSERT INTO voters (nim, name) VALUES ('${OUTSIDER}', 'Eve')`, /voters_locked/],
+			["UPDATE voters SET name = 'X'", /voters_locked/],
+			['DELETE FROM voters', /voters_locked/],
+			[`INSERT INTO voted (nim) VALUES ('${BOB}')`, /voting_closed/],
+			[`UPDATE voted SET nim = '${BOB}'`, /voted_immutable/],
+			['DELETE FROM voted', /voted_immutable/],
+			["INSERT INTO ballots (code, candidate_id) VALUES ('CCCC-DDDD', 2)", /voting_closed/],
+			['UPDATE ballots SET candidate_id = 2', /ballots_immutable/],
+			['DELETE FROM ballots', /ballots_immutable/]
+		];
+		for (const [sql, error] of attempts) expect(() => db.exec(sql), sql).toThrow(error);
+
+		expect([count(db, 'voters'), count(db, 'voted'), count(db, 'ballots')]).toEqual([2, 1, 1]);
+	});
+});
