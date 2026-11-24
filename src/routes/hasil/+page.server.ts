@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { getDb } from '#lib/server/db.js';
 import { candidatePhotos } from '#lib/server/candidates.js';
+import { cachedWhenClosed } from '#lib/server/closed-cache.js';
 import { getElectionStatus } from '#lib/server/election.js';
 import {
 	findBallot,
@@ -19,9 +20,11 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const db = getDb();
-	const [election, participation, release] = await Promise.all([
-		getElectionStatus(db),
-		getParticipation(db),
+	// Fase dibaca dulu: setelah ditutup, data hasil diambil dari cache (closed-cache.ts). Gerbang tampil
+	// (release, audit publik, showsCounts) tetap dibaca setiap request.
+	const election = await getElectionStatus(db);
+	const [participation, release] = await Promise.all([
+		cachedWhenClosed('participation', election, () => getParticipation(db)),
 		getResultsRelease(db)
 	]);
 
@@ -44,8 +47,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// action `periksa`, satu kode per permintaan. CSV hanya bila penampil boleh melihat angka.
 	const auditPublic = await isAuditPublic(db);
 	const [tally, published, photos, ids, exceptionNims] = await Promise.all([
-		getTally(db),
-		auditPublic && withCounts ? publishedBallots(db) : null,
+		cachedWhenClosed('tally', election, () => getTally(db)),
+		auditPublic && withCounts
+			? cachedWhenClosed('ballots', election, () => publishedBallots(db))
+			: null,
 		candidatePhotos(db),
 		db
 			.prepare('SELECT id, number FROM candidates')

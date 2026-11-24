@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+import { cachedWhenClosed } from '#lib/server/closed-cache.js';
 import { getDb } from '#lib/server/db.js';
 import { getElectionStatus } from '#lib/server/election.js';
 import {
@@ -30,7 +31,8 @@ export const GET: RequestHandler = async ({ locals }) => {
 	if (!showsCounts(release.detail, locals.role !== null)) {
 		error(404, 'Panitia hanya mempublikasikan persentase suara.');
 	}
-	const { csv, sha256 } = await publishedBallots(db);
+	// Setelah ditutup daftar surat suara tidak bisa berubah, jadi diambil dari cache (closed-cache.ts).
+	const { csv, sha256 } = await cachedWhenClosed('ballots', election, () => publishedBallots(db));
 	return new Response(csv, {
 		headers: {
 			'content-type': 'text/csv; charset=utf-8',
